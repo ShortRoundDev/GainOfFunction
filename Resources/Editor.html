@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            html, body {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                font-family: Arial, Helvetica, sans-serif;
+            }
+            canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: calc(100vw - 512px);
+                height: 100vh;
+                border-right: 3px solid black;
+            }
+
+            #editor {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 512px;
+                height: 100vh;
+                padding: 10px;
+                overflow-y: scroll;
+            }
+
+            #tiles {
+                border: 1px dotted grey;
+                width: 100%;
+                height: 256px;
+                overflow: auto;
+            }
+
+            #entities {
+                border: 1px dotted grey;
+                width: 100%;
+                height: 256px;
+                overflow: auto;
+            }
+
+            .tile {
+                width: 64px;
+                height: 64px;
+                display: inline-block;
+                margin: 5px;
+                border: 1px solid black;
+                background-size: contain;
+                background-repeat: no-repeat;
+                image-rendering: crisp-edges;
+            }
+            .tile[selected=true]{
+                border: 2px solid rgba(0, 255, 0, 255);
+            }
+            .tile:hover{
+                cursor: pointer;
+                border: 2px solid red;
+                color: red;
+            }
+
+            #tileeditor {
+                padding: 10px;
+                height: 256px;
+                border: 1px dotted grey
+            }
+
+            #layer {
+                position: absolute;
+                top:10px;
+                right: 524px
+            }
+
+            #loadMap{
+                margin: 10px 0;
+                font-weight: 800;
+            }
+
+            #save {
+                position: absolute;
+                bottom: 32px;
+                padding: 10px 20px;
+                left: 32px;
+            }
+        </style>
+        <script src="EntityDefs.js"></script>
+        <script src="TileDefs.js"></script>
+    </head>
+    <body>
+        <canvas>You need HTML 5</canvas>
+        <label id="layer">
+            <input type="number" value=1 min=0 max=3 onchange="changeLayer(event)"/> Layer
+        </label>
+        <div id="editor">
+            <h3>Tiles</h3>
+            <div id="tiles">
+                <div class="tile" id="newTile" style="background-image: url(Add.png)" onclick="newTile(event)"></div>
+            </div>
+            <h3>Entities</h3>
+            <div id="entities">
+                <div class="tile" id="newEntity" style="background-image: url(Add.png)" onclick="newEntity(event)"></div>
+            </div>
+            <h3>Editor</h3>
+            <div id="tileeditor">
+            </div>
+            <div id="loadMap"><label>Load Map</label> <input type="file" onchange="loadMap(event)"/></div>
+        </div>
+        <button onclick="saveMap()" id="save">Save</button>
+        <script src="Editor.js"></script>
+    </body>
+</html>
