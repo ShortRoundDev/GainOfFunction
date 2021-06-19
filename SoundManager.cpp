@@ -49,6 +49,7 @@ SoundManager::SoundManager() : sounds(), sourceStack(), context(NULL) {
     loadFile("Resources/Audio/pickupPistol.ogg", true);
     loadFile("Resources/Audio/bubble.ogg", false);
     loadFile("Resources/Audio/Basement.ogg", true);
+    loadFile("Resources/Audio/WeirdNoises.ogg", false);
 }
 
 SoundManager::~SoundManager() {
@@ -103,7 +104,7 @@ ALuint SoundManager::generateSource(ALuint* source, bool loop, float gain) {
         std::cerr << err << std::endl;
     }
     
-    alSourcef(*source, AL_REFERENCE_DISTANCE, 1.0f);
+    alSourcef(*source, AL_REFERENCE_DISTANCE, 1.5f);
     
     alSourcef(*source, AL_MAX_DISTANCE, 10.0f);
     err = alGetError();

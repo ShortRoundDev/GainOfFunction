@@ -3,8 +3,14 @@
 #include <iostream>
 #include "Managers.hpp"
 
-Pistol::Pistol(glm::vec3 pos): Entity(pos, "Resources/pistolpickup.png", glm::vec2(0.35f, 0.35f), glm::vec2(0.1f, 0.1f)) {
-    frame = 0;
+Pistol::Pistol(glm::vec3 pos): Entity(
+    pos,
+    "Resources/pistolpickup.png",
+    glm::vec2(0.35f, 0.35f),
+    glm::vec2(0.1f, 0.1f),
+    1010
+) {
+    animations["idle"] = { 0, 1, 0 };
     totalFrames = 1;
 }
 

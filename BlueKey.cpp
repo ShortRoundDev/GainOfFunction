@@ -3,8 +3,13 @@
 #include <iostream>
 #include "Managers.hpp"
 
-BlueKey::BlueKey(glm::vec3 pos): Entity(pos, 1001, glm::vec2(0.25f, 0.25f), glm::vec2(0.1f, 0.1f)) {
-    frame = 0;
+BlueKey::BlueKey(glm::vec3 pos): Entity(
+    pos,
+    1001,
+    glm::vec2(0.25f, 0.25f),
+    glm::vec2(0.1f, 0.1f)
+) {
+    animations["idle"] = { 0, 1, 0 };
     totalFrames = 1;
 }
 

@@ -2,7 +2,13 @@
 
 #include "Managers.hpp"
 
-RifleAmmo::RifleAmmo(glm::vec3 pos) : Entity(pos, "Resources/rifleammo.png", glm::vec2(0.2, 0.2), glm::vec2(0.7, 0.2)){
+RifleAmmo::RifleAmmo(glm::vec3 pos) : Entity(
+    pos,
+    "Resources/rifleammo.png",
+    glm::vec2(0.2, 0.2),
+    glm::vec2(0.7, 0.2),
+    1006
+){
 }
 
 RifleAmmo::~RifleAmmo(){

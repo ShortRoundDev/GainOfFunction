@@ -2,9 +2,16 @@
 
 #include "Managers.hpp"
 
-BulletHole::BulletHole(glm::vec3 pos) : Entity(pos, "Resources/BulletHole.png", glm::vec2(0.2f, 0.2f), glm::vec2(0.0f, 0.0f)){
-    lifetime = 0;
+BulletHole::BulletHole(glm::vec3 pos) : Entity(
+    pos,
+    "Resources/BulletHole.png",
+    glm::vec2(0.2f, 0.2f),
+    glm::vec2(0.0f, 0.0f),
+    1301
+){
     totalFrames = 5;
+    currentAnimation = "poof";
+    animations["poof"] = { 0, 5, 0 };
 }
 
 BulletHole::~BulletHole() {
@@ -12,9 +19,10 @@ BulletHole::~BulletHole() {
 }
 
 void BulletHole::update() {
-    lifetime++;
-    if(lifetime > 20){
+    if (animations["poof"].checkLooped()) {
         GameManager::deleteEntity(this);
+        return;
     }
-    frame = (float)(lifetime/5);
+    animations["poof"].iterate(0.2f);
+
 }

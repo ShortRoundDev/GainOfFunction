@@ -11,9 +11,11 @@ Syringe::Syringe(glm::vec3 pos, int big) : Entity(
 		? "Resources/Syringe.png"
 		: "Resources/BigSyringe.png",
 	glm::vec2(0.25, 0.25),
-	glm::vec2(0.5, 0.5)
+	glm::vec2(0.5, 0.5),
+	1012
 ) {
 	heal = big + 1;
+	
 }
 
 Syringe::~Syringe() {

@@ -13,6 +13,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/intersect.hpp>
 
+#include "TileDef.h"
+
 #define TIMESPEED 16666666
 
 float alpha = 1.0f;
@@ -23,11 +25,16 @@ std::unique_ptr<GameManager> GameManager::instance = nullptr;
 int64_t GameManager::accumulator = 0;
 std::chrono::high_resolution_clock::time_point GameManager::lastFrame = std::chrono::high_resolution_clock::now();
 
+bool GameManager::showingMessage = false;
+char* GameManager::message = NULL;
+
 bool GameManager::keyMap[GLFW_KEY_LAST];
 GameState GameManager::state = MAIN_MENU;
 
 int GameManager::init(GLFWwindow* window, const uint16_t width, const uint16_t height) {
     GameManager::instance = std::make_unique<GameManager>(window, width, height);
+
+    GraphicsManager::loadTex("Resources/tv.png", GL_BGRA);
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
@@ -69,6 +76,11 @@ void GameManager::draw() {
     
     GameManager::instance->_draw();
     GraphicsManager::draw();
+}
+
+void GameManager::displayMessage(char* message) {
+    GameManager::showingMessage = true;
+    GameManager::message = message;
 }
 
 void GameManager::processInput(GLFWwindow* window) {
@@ -204,6 +216,8 @@ void GameManager::updateLoadMenu() {
 }
 
 void GameManager::updateGame() {
+    if (showingMessage)
+        return;
     camera.update();
     player.update(GraphicsManager::instance->window);
     currentLevel->update();
@@ -246,6 +260,13 @@ void GameManager::_draw() {
     case PLAYING:
         drawGame();
         break;
+    }
+
+    if (GameManager::showingMessage && GameManager::message != NULL) {
+        drawUi(GraphicsManager::findTex("Resources/tv.png"), SCREEN_X(512), SCREEN_Y(1024), SCREEN_W(2048), SCREEN_H(2048));
+        glClear(GL_DEPTH_BUFFER_BIT);
+        print(message, SCREEN_X(140), SCREEN_Y(212), 0.06);
+        print("Press Q to close", SCREEN_X(1024 - 512), SCREEN_Y(768 - 32), 0.07);
     }
 }
 
@@ -324,7 +345,11 @@ void GameManager::print(const char* message, float xPos, float yPos, float size)
             cDiff = c - '0';
             if(cDiff >= 0 && cDiff <= 9){
                 cDiff += 26;
-            } else {
+            }
+            else if (c == '.') {
+                cDiff = 36;
+            }
+            else {
                 if(c == '\n') {
                     x = 0;
                     y -= size;
@@ -377,7 +402,7 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
                 PLAY_S("Resources/Audio/pistol.ogg", glm::vec3(0));
                 switch(GameManager::instance->mainMenuOption){
                 case 0:
-                    GameManager::instance->load("Resources/e1m2.bin", false, false);
+                    GameManager::instance->load("Resources/e1m3.bin", false, false);
                     break;
                 case 1: // Load
                     GameManager::instance->state = LOAD_SCREEN;
@@ -425,6 +450,11 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         break;
     }
 
+    if (GameManager::showingMessage && key == GLFW_KEY_Q && action == GLFW_PRESS) {
+        GameManager::showingMessage = false;
+        GameManager::message = NULL;
+    }
+
     if(key == GLFW_KEY_M && action == GLFW_PRESS) {
         if(glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED){
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
@@ -465,11 +495,11 @@ void GameManager::initFont() {
     
     float square[] = {
         -0.5f, -0.5f, 0.0f, 0.0f,       0.0f, // Top left
-         0.5f, -0.5f, 0.0f, 1.0f/36.0f, 0.0f, // Top Right
+         0.5f, -0.5f, 0.0f, 1.0f/37.0f, 0.0f, // Top Right
         -0.5f,  0.5f, 0.0f, 0.0f,       1.0f,
         
-         0.5f, -0.5f, 0.0f, 1.0f/36.0f, 0.0f,
-         0.5f,  0.5f, 0.0f, 1.0f/36.0f, 1.0f,
+         0.5f, -0.5f, 0.0f, 1.0f/37.0f, 0.0f,
+         0.5f,  0.5f, 0.0f, 1.0f/37.0f, 1.0f,
         -0.5f,  0.5f, 0.0f, 0.0f,       1.0f
     };
     
@@ -556,7 +586,7 @@ bool GameManager::dda(float startX, float startY, float endX, float endY, int* x
         Wall* wall = TRY_WALL(gridPosX, gridPosY);
         if (wall == NULL)
             break;
-        if(wall->wallTexture != 0 && wall->wallTexture != 105 && ((!wall->isDoor ^ (wall->isDoor && !wall->isOpen)))) {
+        if(COLLIDEABLE_ALL(wall)) {
             *x = gridPosX;
             *y = gridPosY;
             return false;

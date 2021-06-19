@@ -2,7 +2,13 @@
 
 #include "Managers.hpp"
 
-Ammo::Ammo(glm::vec3 pos) : Entity(pos, "Resources/ammo.png", glm::vec2(0.2, 0.2), glm::vec2(0.7, 0.2)){
+Ammo::Ammo(glm::vec3 pos) : Entity(
+    pos,
+    "Resources/ammo.png",
+    glm::vec2(0.2, 0.2),
+    glm::vec2(0.7, 0.2),
+    1005
+){
 }
 
 Ammo::~Ammo(){

@@ -54,6 +54,11 @@ public:
     uint8_t* loadFile(std::string path);
     
     void draw();
+    glm::vec3 drawDoor(int x, int y, glm::vec3 offset);
+    glm::vec3 drawRegular(int x, int y, glm::vec3 offset);
+    glm::vec3 drawSign(int x, int y, glm::vec3 offset);
+    glm::vec3 drawTv(int x, int y, glm::vec3 offset);
+
     void update();
 private:
     void uploadWall();

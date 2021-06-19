@@ -118,6 +118,10 @@ GLuint GraphicsManager::generateVao(float* vertices, size_t size){
     return vao;
 }
 
+bool GraphicsManager::isLeft(glm::vec3 start, glm::vec3 end, glm::vec3 point) {
+    return  ((end.x - start.x) * (point.z - start.z) - (end.z - start.z) * (point.x - start.x)) > 0;
+}
+
 void GraphicsManager::draw() {
     glfwSwapBuffers(instance->window);
     glfwPollEvents();

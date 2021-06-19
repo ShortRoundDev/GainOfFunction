@@ -11,6 +11,8 @@
 #include "BulletHole.hpp"
 #include "ZombieGib.hpp"
 
+#include "TileDef.h"
+
 Player::Player(glm::vec3 startPos):
     pos(startPos),
     moveVec(0, 0, 0),
@@ -253,6 +255,12 @@ void Player::keyHandler(GLFWwindow* window, int key, int scancode, int action, i
         return;
     }
     if(key == GLFW_KEY_E && action == GLFW_PRESS) {
+
+        Wall* occupied = TRY_WALL(((int)pos.x), ((int)pos.z));
+        if (occupied != NULL && !GameManager::showingMessage && WALL_IS_KIND(occupied, TV_SCREEN) && occupied->message != NULL) {
+            GameManager::displayMessage(occupied->message);
+        }
+
         auto look = glm::normalize(glm::vec3(CAMERA.cameraFront.x, 0.0f, CAMERA.cameraFront.z));
         auto lookX = look.x;
         auto lookY = look.z;
@@ -277,7 +285,7 @@ void Player::keyHandler(GLFWwindow* window, int key, int scancode, int action, i
                 Wall* wall = TRY_WALL(x, y);
                 if (wall == NULL)
                     break;
-                if(wall->wallTexture == 115 && wall->message != NULL && wall->message[0] != 0) {
+                if(WALL_IS_KIND(wall, ELEVATOR) && wall->message != NULL && wall->message[0] != 0) {
                     std::cout << "Using elevator" << std::endl;
                     //std::cout << wall->message << std::endl;
                     GameManager::instance->levelChanging = true;
@@ -393,14 +401,12 @@ void Player::draw() {
         ));
         glDrawArrays(GL_TRIANGLES, 0, 6);
     }
-
-
     
     glClear(GL_DEPTH_BUFFER_BIT);
     Wall* occupied = TRY_WALL(((int)pos.x), ((int)pos.z));
     if (occupied == NULL)
         return;
-    if(occupied->wallTexture == 105){
+    if(WALL_IS_KIND(occupied, ELEVATOR)){
         if(occupied->message != NULL){
             shader->use();
             glBindTexture(GL_TEXTURE_2D, popupSign);
@@ -417,6 +423,9 @@ void Player::draw() {
             
             PRINT(occupied->message, SCREEN_X(150), SCREEN_Y(768/2), 0.08f);
         }
+    }
+    if (WALL_IS_KIND(occupied, TV_SCREEN) && !GameManager::showingMessage) {
+        PRINT("Press E to read", SCREEN_X(1024/2 - 128), SCREEN_Y(768/2), 0.05);
     }
 }
 

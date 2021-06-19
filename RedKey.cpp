@@ -4,6 +4,7 @@
 #include "Managers.hpp"
 
 RedKey::RedKey(glm::vec3 pos): Entity(pos, 1000, glm::vec2(0.25f, 0.25f), glm::vec2(0.1f, 0.1f)) {
+    animations["idle"] = { 0, 1, 0 };
 }
 
 RedKey::~RedKey() {

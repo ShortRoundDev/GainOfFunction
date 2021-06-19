@@ -2,9 +2,16 @@
 
 #include "Managers.hpp"
 
-ZombieGib::ZombieGib(glm::vec3 pos, glm::vec2 scale) : Entity(pos, "Resources/pop.png", scale, glm::vec2(0, 0)) {
+ZombieGib::ZombieGib(glm::vec3 pos, glm::vec2 scale): Entity(
+    pos,
+    "Resources/pop.png",
+    scale,
+    glm::vec2(0, 0),
+    1300
+) {
     totalFrames = 8;
-    frame = 0;
+    currentAnimation = "pop";
+    animations["pop"] = { 0, 8, 0 };
 }
 
 ZombieGib::~ZombieGib(){
@@ -12,9 +19,10 @@ ZombieGib::~ZombieGib(){
 }
 
 void ZombieGib::update(){
-    lifetime++;
-    if(frame >= totalFrames){
+
+    if (animations["pop"].checkLooped()) {
         GameManager::deleteEntity(this);
+        return;
     }
-    frame = (float)(lifetime/3);
+    animations["pop"].iterate(0.3f);
 }

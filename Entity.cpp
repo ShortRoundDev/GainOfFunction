@@ -2,8 +2,9 @@
 
 #include "GraphicsManager.hpp"
 #include "GameManager.hpp"
-
 #include "Managers.hpp"
+
+#include "glm/gtx/rotate_vector.hpp"
 
 #include <iostream>
 
@@ -35,13 +36,16 @@ void Entity::uploadVertices(){
     Entity::vao = GraphicsManager::generateVao(plane, sizeof(plane));
 }
 
-Entity::Entity(glm::vec3 position, std::string texture, glm::vec2 scale, glm::vec2 radius) {
+Entity::Entity(glm::vec3 position, std::string texture, glm::vec2 scale, glm::vec2 radius, int entityType): animations() {
     this->position = position;
     this->texture = GraphicsManager::loadTex(texture, GL_BGRA);
     this->front = glm::vec3(0.0f, 0.0f, 1.0f);
     this->scale = scale;
     this->radiusX = radius.x;
     this->radiusY = radius.y;
+    totalFrames = 1;
+    this->entityType = entityType;
+    animations["idle"] = { 0, 1, 0 };
 }
 
 Entity::Entity(glm::vec3 position, GLuint texture, glm::vec2 scale, glm::vec2 radius) {
@@ -51,6 +55,9 @@ Entity::Entity(glm::vec3 position, GLuint texture, glm::vec2 scale, glm::vec2 ra
     this->scale = scale;
     this->radiusX = radius.x;
     this->radiusY = radius.y;
+    entityType = texture;
+    totalFrames = 1;
+    animations["idle"] = { 0, 1, 0 };
 }
 
 Entity::~Entity() {
@@ -75,11 +82,34 @@ void Entity::draw() {
             _shader->setFloat("minBright", 0.0f);
         }
     }
+
+    AnimationDesc* desc = NULL;
+    getCurrentAnimation(&desc);
+    int currentFrame = 0;
+    if (desc != NULL)
+        currentFrame = desc->frameOffset();
     
     _shader->setVec3("offset", position);
     _shader->setVec2("scale", scale);
-    _shader->setFloat("frame", frame);
+    _shader->setFloat("frame", currentFrame);
     _shader->setFloat("maxFrame", totalFrames);
+
+    // calculate angle
+    int angle = 0;
+    if (totalAngles > 1) {
+        auto diff = glm::normalize(position - PLAYER.pos);
+        auto rotFront = glm::rotate(front, (float)(-M_PI / 4.0f), glm::vec3(0, 1.0f, 0));
+
+        auto perspective = acosf(glm::dot(diff, rotFront)) * (180.0 / 3.141592653589793238463);
+        if (GraphicsManager::isLeft(position, position + rotFront, PLAYER.pos)) {
+            perspective *= -1;
+        }
+        perspective += 180;
+        angle = (int)(perspective / 360.0f * totalAngles);
+    }
+    _shader->setFloat("angle", angle);
+    _shader->setFloat("maxAngles", totalAngles);
+
     
     glBindVertexArray(Entity::vao);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -88,6 +118,13 @@ void Entity::draw() {
 
 void Entity::update() {
     
+}
+
+void Entity::getCurrentAnimation(AnimationDesc** desc) {
+    auto animationDesc = animations.find(currentAnimation);
+    if (animationDesc == animations.end())
+        *desc = NULL;
+    *desc = &(animationDesc->second);
 }
 
 glm::vec3 Entity::pushWall(glm::vec3 newPos) {
@@ -211,4 +248,81 @@ void Entity::hurt(int damage){
 void Entity::die(){
     (&PLAYER)->killedEnemies++;
     GameManager::deleteEntity(this);
+}
+
+void Entity::findPathToEntity(Entity* entity, std::map<uint32_t, uint32_t> &path, std::queue<glm::vec3> &goals) {
+    if (entity == NULL) {
+        return;
+    }
+    return findPathToSpot(
+        (int16_t)position.x, (int16_t)position.z,
+        path,
+        goals
+    );
+}
+
+bool Entity::findPathToSpot(int x, int y, std::map<uint32_t, uint32_t>& path, std::queue<glm::vec3>& goals) {
+    bool found = GameManager::instance->bfs(
+        (int16_t)position.x, (int16_t)position.z,
+        x, y,
+        path
+    );
+    if (found) {
+        found = optimizePath(x, y, path, goals);
+    }
+    return found;
+}
+bool Entity::optimizePath(int fx, int fy, std::map<uint32_t, uint32_t>& path, std::queue<glm::vec3>& goals) {
+    if (goals.empty()) {
+        //Start backwards
+        glm::vec3 last = position;
+
+        float itX = ((float)fx) + 0.5f;
+        float itY = ((float)fy) + 0.5f;
+        uint32_t it = PACK_COORDS((int)itX, (int)itY);
+
+        bool quit = (itX == (int)last.x) && (itY == (int)last.z);
+        //safety valve
+        int counter = 0;
+        while (!quit && counter < 512) {
+            int _x, _y;
+            counter++;
+            if (GameManager::instance->dda(
+                last.x,
+                last.z,
+                itX,
+                itY,
+                &_x, &_y
+            )) {
+                last = glm::vec3(itX, 0, itY);
+                goals.push(last);
+                it = PACK_COORDS(fx, fy);
+                itX = ((float)fx) + 0.5f;
+                itY = ((float)fy) + 0.5f;
+            }
+            else {
+                it = path[it];
+                itX = (float)(UNPACK_X(it)) + 0.5f;
+                itY = (float)(UNPACK_Y(it)) + 0.5f;
+            }
+            quit = ((int)itX == (int)last.x) && ((int)itY == (int)last.z);
+        }
+    }
+    int counter = 0;
+    if (goals.empty()) { // raycasting failed, just use a regular orthogonal path
+        uint32_t goal = path[PACK_COORDS((int16_t)fx, (int16_t)fy)];
+        uint32_t start = PACK_COORDS((int16_t)position.x, (int16_t)position.z);
+        while (goal != start && counter < 512) {
+            auto x = UNPACK_X(goal);
+            auto y = UNPACK_Y(goal);
+            goals.push(glm::vec3(x, 0, y));
+            goal = path[goal];
+            counter++;
+        }
+    }
+    if (goals.empty()) { // something really fucked up here. This should never happen. Treat it as a path not existing
+        return false;
+        std::cerr << "Catastrophic failure" << std::endl;
+    }
+    return true;
 }

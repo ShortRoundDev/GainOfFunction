@@ -13,6 +13,7 @@
 #include "GameManager.hpp"
 
 #include "EntDef.h"
+#include "TileDef.h"
 #include "Managers.hpp"
 
 #define TILE_TOP_LEFT       0.0f, 0.0f
@@ -199,7 +200,7 @@ void Level::draw() {
             
 
             auto texture = GraphicsManager::findTex(tileNum);
-            if(tileNum == 0 || tileNum == 3)
+            if(tileNum == BLANK_WALL || tileNum == NO_DRAW)
                 goto reset;
                 
             offset += glm::vec3(0, walls[tile].displacement.y, 0);
@@ -208,45 +209,14 @@ void Level::draw() {
             wallShader->setVec4("tint", w->tint);
             glBindTexture(GL_TEXTURE_2D, texture);
 
-            if(tileNum >= 100 && tileNum <= 104) {
-                auto left = COORD(j - 1, i);
-                auto right = COORD(j + 1, i);
-                
-                if(left >= 0 && right < width * height && (walls[left].wallTexture != 0 && walls[right].wallTexture != 0)){
-                    wallShader->setVec3("scale", glm::vec3(1.0f, 1.0f, 0.5f));
-                    offset.z += 0.25f;
-                } else {
-                    wallShader->setVec3("scale", glm::vec3(0.5f, 1.0f, 1.0f));
-                    offset.x += 0.25f;
-                }
-            }else if(tileNum == 105){ // sign
-                Wall* left   = TRY_WALL(j - 1, i);
-                Wall* right  = TRY_WALL(j + 1, i);
-                Wall* up     = TRY_WALL(j, i - 1);
-                Wall* down   = TRY_WALL(j, i + 1);
-                
-                if(left != NULL && SOLID(*left) && IN_BOUNDS(j - 1, i) && left->wallTexture != 3){
-                    wallShader->setVec3("scale", glm::vec3(0.05f, 0.34375f, 0.8125f));
-                    offset.x -= 0.048f;
-                    offset.z += 0.1875/2.0f;
-                    offset.y += 0.35f;
-                } else if(right != NULL && SOLID(*right) && IN_BOUNDS(j + 1, i) && right->wallTexture != 3){
-                    wallShader->setVec3("scale", glm::vec3(0.05f, 0.34375f, 0.8125f));
-                    offset.x += 0.999f;
-                    offset.z += 0.1875/2.0f;
-                    offset.y += 0.35f;
-                } else if(up != NULL && SOLID(*up) && IN_BOUNDS(j, i - 1) && up->wallTexture != 3){
-                    wallShader->setVec3("scale", glm::vec3(0.8125f, 0.34375f, 0.05f));
-                    offset.z -= 0.048f;
-                    offset.y += 0.35f;
-                    offset.x += 0.1875/2.0f;
-                } else if(down != NULL && SOLID(*down) && IN_BOUNDS(j, i + 1) && down->wallTexture != 3){
-                    wallShader->setVec3("scale", glm::vec3(0.8125f, 0.34375f, 0.05f));
-                    offset.z += 0.999f;
-                    offset.y += 0.35f;
-                    offset.x += 0.1875/2.0f;
-                }
-            }else {
+            if(TILE_IS_DOOR(tileNum)) {
+                offset = drawDoor(j, i, offset);
+            } else if(tileNum == WALL_SIGN){
+                offset = drawSign(j, i, offset);
+            } else if (tileNum == TV_SCREEN) {
+                offset = drawTv(j, i, offset);
+            }
+            else {
                 wallShader->setVec3("scale", glm::vec3(1.0f, 1.0f, 1.0f));
             }
             
@@ -271,6 +241,88 @@ void Level::draw() {
         e->draw();
     }
 }
+
+glm::vec3 Level::drawDoor(int x, int y, glm::vec3 offset) {
+    auto left = COORD(x - 1, y);
+    auto right = COORD(x + 1, y);
+
+    if (left >= 0 && right < width * height && (walls[left].wallTexture != 0 && walls[right].wallTexture != 0)) {
+        wallShader->setVec3("scale", glm::vec3(1.0f, 1.0f, 0.5f));
+        offset.z += 0.25f;
+    }
+    else {
+        wallShader->setVec3("scale", glm::vec3(0.5f, 1.0f, 1.0f));
+        offset.x += 0.25f;
+    }
+    return offset;
+}
+
+glm::vec3 Level::drawRegular(int x, int y, glm::vec3 offset) {
+
+}
+
+glm::vec3 Level::drawSign(int x, int y, glm::vec3 offset) {
+    Wall* left  = TRY_WALL(x - 1, y);
+    Wall* right = TRY_WALL(x + 1, y);
+    Wall* up    = TRY_WALL(x, y - 1);
+    Wall* down  = TRY_WALL(x, y + 1);
+
+    if (left != NULL && SOLID(*left) && IN_BOUNDS(x - 1, y) && left->wallTexture != 3) {
+        wallShader->setVec3("scale", glm::vec3(0.05f, 0.34375f, 0.8125f));
+        offset.x -= 0.048f;
+        offset.z += 0.1875 / 2.0f;
+        offset.y += 0.35f;
+    }
+    else if (right != NULL && SOLID(*right) && IN_BOUNDS(x + 1, y) && right->wallTexture != 3) {
+        wallShader->setVec3("scale", glm::vec3(0.05f, 0.34375f, 0.8125f));
+        offset.x += 0.999f;
+        offset.z += 0.1875 / 2.0f;
+        offset.y += 0.35f;
+    }
+    else if (up != NULL && SOLID(*up) && IN_BOUNDS(x, y - 1) && up->wallTexture != 3) {
+        wallShader->setVec3("scale", glm::vec3(0.8125f, 0.34375f, 0.05f));
+        offset.z -= 0.048f;
+        offset.y += 0.35f;
+        offset.x += 0.1875 / 2.0f;
+    }
+    else if (down != NULL && SOLID(*down) && IN_BOUNDS(x, y + 1) && down->wallTexture != 3) {
+        wallShader->setVec3("scale", glm::vec3(0.8125f, 0.34375f, 0.05f));
+        offset.z += 0.999f;
+        offset.y += 0.35f;
+        offset.x += 0.1875 / 2.0f;
+    }
+    return offset;
+}
+
+glm::vec3 Level::drawTv(int x, int y, glm::vec3 offset) {
+    Wall* left = TRY_WALL(x - 1, y);
+    Wall* right = TRY_WALL(x + 1, y);
+    Wall* up = TRY_WALL(x, y - 1);
+    Wall* down = TRY_WALL(x, y + 1);
+
+    if (left != NULL && SOLID(*left) && IN_BOUNDS(x - 1, y) && left->wallTexture != 3) {
+        wallShader->setVec3("scale", glm::vec3(0.05f, 1.0f, 1.0f));
+        offset.x -= 0.048f;
+        offset.z += 0.1875 / 2.0f;
+    }
+    else if (right != NULL && SOLID(*right) && IN_BOUNDS(x + 1, y) && right->wallTexture != 3) {
+        wallShader->setVec3("scale", glm::vec3(0.05f, 1.0f, 1.0f));
+        offset.x += 0.999f;
+        offset.z += 0.1875 / 2.0f;
+    }
+    else if (up != NULL && SOLID(*up) && IN_BOUNDS(x, y - 1) && up->wallTexture != 3) {
+        wallShader->setVec3("scale", glm::vec3(1.0f, 1.0f, 0.05f));
+        offset.z -= 0.048f;
+        offset.x += 0.1875 / 2.0f;
+    }
+    else if (down != NULL && SOLID(*down) && IN_BOUNDS(x, y + 1) && down->wallTexture != 3) {
+        wallShader->setVec3("scale", glm::vec3(1.0f, 1.0f, 0.05f));
+        offset.z += 0.999f;
+        offset.x += 0.1875 / 2.0f;
+    }
+    return offset;
+}
+
 
 void Level::update() {
     if(!GameManager::instance->levelChanging) {
@@ -403,8 +455,8 @@ void Level::loadWalls() {
         walls[i].isDoor = (bitMask & 1) == 1;
         walls[i].key = (bitMask >> 1) & 0b11;
         
-        if(tex == 105 || tex == 115){
-            walls[i].isSolid = tex == 115;
+        if(TILE_HAS_MESSAGE(tex)){
+            walls[i].isSolid = tex == ELEVATOR;
             uint64_t strOff = *((uint64_t*)(wallsLocation + offset + 8));
             std::cout <<  "STR OFF: " << strOff << std::endl;
             if(strOff != 0) {
@@ -465,6 +517,10 @@ Entity* Level::createEntity(uint16_t entNum, int x, int y) {
         case SYRINGE:
         case BIGSYRINGE:
             return new Syringe(start, entNum & 1);
+        case COLLEEN:
+            return new Colleen(start);
+        case BEACON:
+            return new Beacon(start);
     }
     return new Entity(
         glm::vec3((float)x + 0.5f, 0, (float)y + 0.5f),

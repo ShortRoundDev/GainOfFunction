@@ -12,5 +12,7 @@ const entDefs = {
     "3000.png": 3000,
     "3001.png": 3001,
     "3002.png": 3002,
-    "3003.png": 3003
+    "3003.png": 3003,
+    "Colleen.png": 1004,
+    "Beacon.png": 1200
 }

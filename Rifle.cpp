@@ -3,8 +3,14 @@
 #include <iostream>
 #include "Managers.hpp"
 
-Rifle::Rifle(glm::vec3 pos): Entity(pos, "Resources/riflepickup.png", glm::vec2(0.70f, 0.35f), glm::vec2(0.1f, 0.1f)) {
-    frame = 0;
+Rifle::Rifle(glm::vec3 pos): Entity(
+    pos,
+    "Resources/riflepickup.png",
+    glm::vec2(0.70f, 0.35f),
+    glm::vec2(0.1f, 0.1f),
+    1011
+) {
+    animations["idle"] = { 0, 1, 0 };
     totalFrames = 1;
 }
 

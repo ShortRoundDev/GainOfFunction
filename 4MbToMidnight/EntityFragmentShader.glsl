@@ -7,12 +7,19 @@ in vec3 dist;
 uniform sampler2D tex;
 uniform vec4 tint;
 uniform float minBright;
+
+uniform float angle;
+uniform float maxAngles;
+
 uniform float frame;
 uniform float maxFrame;
 
 void main(){
     
-    vec4 t = texture(tex, vec2((TexCoord.x/maxFrame) + (frame/maxFrame), TexCoord.y));
+    vec4 t = texture(tex, vec2(
+        (TexCoord.x/maxFrame) + (frame/maxFrame),
+        (TexCoord.y/maxAngles) + (angle/maxAngles)
+    ));
     if(t.a == 0.0)
         discard;
     float z = min(1,

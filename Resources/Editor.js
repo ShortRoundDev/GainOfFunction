@@ -6,6 +6,8 @@ const tHeight = 64;
 let xMax = 10;
 let yMax = 10;
 
+let activeZone = 1;
+
 let grid = [];
 let entityGrid = [];
 let entities = [];
@@ -26,6 +28,17 @@ const K_DOWN = 40;
 const K_SHIFT = 16;
 const K_CTRL = 17;
 const K_P = 80;
+
+let gridColors = [
+    "white",
+    "#eb564b",
+    "#ff9166",
+    "#ffb570",
+    "#3ca370",
+    "#4da6ff",
+    "#80366b",
+    "#964253"
+];
 
 let camera = {
     x: 0,
@@ -149,6 +162,14 @@ function click(e) {
     let tileY = parseInt(y/tHeight);
     let t = grid[tileX][tileY] ?? new Tile(tileX, tileY);
     idx = "wallTexture";
+
+    if(editor.layer === 3){ // grid
+        t.zone = getZone();
+        console.log(t.zone);
+        grid[tileX][tileY] = t;
+        return;
+    }
+
     switch(editor.layer) {
         case 0: idx = "floorTexture"; break;
         case 1: idx = "wallTexture"; break;
@@ -197,6 +218,12 @@ function middleClick(e) {
         }else if(keyMap[K_SHIFT]){
             grid[tileX][tileY] = undefined;
         }else{
+
+            if(editor.layer === 3){ // grid
+                grid[tileX][tileY].zone = 0;
+                return;
+            }
+
             switch(editor.layer) {
                 case 0: idx = "floorTexture"; break;
                 case 1: idx = "wallTexture"; break;
@@ -215,7 +242,12 @@ function editTile(e) {
     let tileY = parseInt(y/tHeight);
 
     let tile = grid[tileX][tileY]
+
     if(!tile) {
+        return;
+    }
+    if(editor.layer === 3){
+        tile.zone = 0
         return;
     }
     editor.selectedTile = tile;
@@ -263,34 +295,61 @@ function drawTiles() {
             if(!wall)
                 continue;
             let idx = 0;
+
             switch(editor.layer) {
                 case 0: idx = wall.floorTexture; break;
                 case 1: idx = wall.wallTexture; break;
                 case 2: idx = wall.ceilingTexture; break;
+                case 3: idx = wall.wallTexture; break;
             }
 
             let x = (i * tWidth) - camera.x;
             let y = (j * tHeight) - camera.y;
 
-            ctx.beginPath();
-            ctx.lineWidth = 4;
-            ctx.strokeStyle = "black";
-            ctx.rect(x, y, tWidth, tHeight);
-            ctx.stroke();
-            ctx.lineWidth = 1;
-            const img = editor.getTile(idx);
-            if(!img){
-                continue;
-            }
-
-            ctx.drawImage(img, x, y, tWidth, tHeight);
-            if(wall === editor.selectedTile){
+            if((editor.layer == 2 || editor.layer == 0) && wall.wallTexture !== 0){
                 ctx.beginPath();
                 ctx.lineWidth = 2;
-                ctx.strokeStyle = "rgb(0, 255, 0)";
-                ctx.rect(x, y, tWidth, tHeight);
+                ctx.strokeStyle = "black";
+                ctx.rect(x + 2, y + 2, tWidth - 4, tHeight - 4);
                 ctx.stroke();
                 ctx.lineWidth = 1;
+            } else if(editor.layer == 1 && wall.ceilingTexture !== 0 || wall.floorTexture !== 0){
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "grey";
+                ctx.rect(x + 2, y + 2, tWidth - 4, tHeight - 4);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+            } else if(editor.layer == 1 && wall.wallTexture == 0 && wall.floorTexture === 0 && wall.ceilingTexture === 0 && wall.zone === 0){ // totally 0 wall, probably should delete, but may not do anything
+                ctx.beginPath();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "magenta";
+                ctx.rect(x + 2, y + 2, tWidth - 4, tHeight - 4);
+                ctx.stroke();
+                ctx.lineWidth = 1;
+            }
+            const img = editor.getTile(idx);
+            if(img){
+                ctx.drawImage(img, x, y, tWidth, tHeight);
+                if(wall === editor.selectedTile){
+                    ctx.beginPath();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = "rgb(0, 255, 0)";
+                    ctx.rect(x, y, tWidth, tHeight);
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+                }
+            }
+            if(editor.layer === 3){ // grid
+                if(wall.zone === 0){
+                    continue;
+                }
+                ctx.fillStyle = gridColors[wall.zone];
+                ctx.fillRect(x + 4, y + 4, tWidth - 8, tHeight - 8);
+
+                ctx.fillStyle = "white";
+                ctx.font = "20px monospace";
+                ctx.fillText(wall.zone, x + 24, y + 36, tHeight - 16)
             }
         }
     }
@@ -318,6 +377,7 @@ function drawEntities() {
 }
 
 function drawPlayer() {
+    ctx.strokeStyle = "black";
     ctx.beginPath();
     let x = (player.x * tWidth) - camera.x + (tWidth/2);
     let y = (player.y * tHeight) - camera.y + (tHeight/2)
@@ -570,7 +630,7 @@ function openEditor(tile) {
 
     let messageEdLabel = null;
     let messageEd = null;
-    if(tile.wallTexture === 105 || tile.wallTexture == 115){
+    if(tile.wallTexture === 105 || tile.wallTexture == 115 || tile.wallTexture == 120){
         messageEdLabel = document.createElement("label");
         messageEdLabel.innerHTML = "Sign Message ";
         messageEd = document.createElement("textarea");
@@ -604,7 +664,7 @@ function saveTile(tile) {
     const keyType = document.getElementById("keyType");
     tile.key = keyType.value;
 
-    if(tile.wallTexture === 105 || tile.wallTexture === 115){
+    if(tile.wallTexture === 105 || tile.wallTexture === 115 || tile.wallTexture === 120){
         const message = document.getElementById("message").value;
         tile.message = message;
         console.log(message);
@@ -660,12 +720,12 @@ function parseWalls(map, rawBuffer) {
             t.wallTexture       = map[offset + idx++];
             t.ceilingTexture    = map[offset + idx++];
             t.floorTexture      = map[offset + idx++];
-            if(t.wallTexture == 0 && t.ceilingTexture == 0 && t.floorTexture == 0)
-                continue;
             t.zone              = (map[offset + idx] & 0xff00) >> 8;
+            if(t.wallTexture == 0 && t.ceilingTexture == 0 && t.floorTexture == 0 && t.zone === 0)
+                continue;
             t.isDoor            = (map[offset + idx] & 1) != 0;
             t.key               = (map[offset + idx++] & 0b110) >> 1;
-            if(t.wallTexture === 105 || t.wallTexture === 115) {
+            if(t.wallTexture === 105 || t.wallTexture === 115 || t.wallTexture == 120) {
                 let addrOffset = parseInt(((offset + idx) * 2));
                 let addrArray = new Uint8Array(rawBuffer);
                 let strOff = 0;
@@ -736,7 +796,7 @@ function saveMap() {
             bin[idx++] = wall.ceilingTexture;
             bin[idx++] = wall.floorTexture;
             bin[idx++] = (wall.zone << 8) | ((wall.isDoor ? 1 : 0) | (wall.key << 1));
-            if(wall.wallTexture === 105 || wall.wallTexture === 115){
+            if(wall.wallTexture === 105 || wall.wallTexture === 115 || wall.wallTexture === 120){
                 stringSetCallbacks.push({
                     idx: idx,
                     wall: wall
@@ -808,6 +868,10 @@ function loadEntities() {
     //xhr.open("GET", "EntityDefs.json");
     //xhr.send();
     console.log("Loading");
+}
+
+function getZone(){ // AUTO *ZONE*!!!
+    return parseInt(document.querySelector("#layer #zone").value);
 }
 
 function loadTiles() {

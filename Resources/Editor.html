@@ -72,7 +72,15 @@
             #layer {
                 position: absolute;
                 top:10px;
-                right: 524px
+                right: 524px;
+                padding: 10px;
+                background: white;
+                border: 2px solid black;
+                font-size: 22px;
+            }
+
+            #layer input {
+                font-size:22px;
             }
 
             #loadMap{
@@ -93,7 +101,8 @@
     <body>
         <canvas>You need HTML 5</canvas>
         <label id="layer">
-            <input type="number" value=1 min=0 max=3 onchange="changeLayer(event)"/> Layer
+            <input type="number" value=1 min=0 max=3 onchange="changeLayer(event)"/> Layer<br><br>
+            <input type="number" id="zone" value=1 min=1 max=8 /> Zone
         </label>
         <div id="editor">
             <h3>Tiles</h3>

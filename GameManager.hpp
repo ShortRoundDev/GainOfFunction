@@ -30,11 +30,15 @@ public:
     std::vector<std::string> availableSaves;
 
     static GameState state;
+    static bool showingMessage;
+    static char* message;
     
     static bool keyMap[GLFW_KEY_LAST];
     
     static void update();
     static void draw();
+
+    static void displayMessage(char* message);
     
     static void processInput(GLFWwindow* window);
     
