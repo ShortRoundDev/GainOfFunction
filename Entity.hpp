@@ -50,9 +50,9 @@ protected:
     glm::vec3 pushWall(glm::vec3 newPos);
     Shader* shaderOverride = nullptr;
 
-    void findPathToEntity(Entity* entity, std::map<uint32_t, uint32_t>& path, std::queue<glm::vec3>& goals);
-    bool findPathToSpot(int x, int y, std::map<uint32_t, uint32_t>& path, std::queue<glm::vec3>& goals);
-    bool optimizePath(int x, int y, std::map<uint32_t, uint32_t>& path, std::queue<glm::vec3>& goals);
+    bool findPathToEntity(Entity* entity, std::map<uint32_t, uint32_t>* path, std::queue<glm::vec3>* goals);
+    bool findPathToSpot(int x, int y, std::map<uint32_t, uint32_t>* path, std::queue<glm::vec3>* goals);
+    bool optimizePath(int x, int y, std::map<uint32_t, uint32_t>* path, std::queue<glm::vec3>* goals);
 private:
     GLuint texture;
     

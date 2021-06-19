@@ -116,7 +116,7 @@ void Player::move(GLFWwindow* window) {
         this->accel *= 0.7f;
     } else {
         accel += PLAYER_ACCEL;
-        accel = glm::clamp(accel, -0.03f, 0.03f);
+        accel = glm::clamp(accel, -0.06f, 0.06f);
     }
     
     if(moving && (abs(moveDir.x) > 0 || abs(moveDir.z) > 0)){
@@ -595,6 +595,7 @@ bool Player::shootRifle() {
 }
 
 void Player::hurt(int damage) {
+    return;
     if (health > 0 && damageBoost == 0) {
         health -= damage;
         damageBoost = 50;

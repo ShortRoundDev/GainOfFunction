@@ -14,7 +14,7 @@ Colleen::Colleen(glm::vec3 pos)
 		"Resources/colleen.png",
 		glm::vec2(1.0f, 1.0f),
 		glm::vec2(0.3f, 0.3f),
-		1200
+		COLLEEN
 	)
 {
 	currentAnimation = "float";
@@ -28,6 +28,7 @@ Colleen::Colleen(glm::vec3 pos)
 	beaconHistory.push_back(-1);
 	beaconHistory.push_back(-1);
 	beaconHistory.push_back(-1);
+	beaconHistory.push_back(-1);
 }
 
 Colleen::~Colleen() {
@@ -37,15 +38,6 @@ Colleen::~Colleen() {
 void Colleen::update() {
 	alSource3f(loopSource, AL_POSITION, position.x, position.y, position.z);
 
-	/*if (canSeePlayer()) {
-		state = SEES_PLAYER;
-		if (!goals.empty()) {
-			std::queue<glm::vec3> empty;
-			std::swap(goals, empty);
-		}
-		if (!path.empty())
-			path.clear();
-	}*/
 
 	// check transitions
 	switch (state) {
@@ -58,7 +50,7 @@ void Colleen::update() {
 	case HUNTING_PLAYER:
 		pursuingCheckTransitions();
 		break;
-	case PATROLING:
+	case PATROLLING:
 		patrollingCheckTransitions();
 		break;
 	}
@@ -74,16 +66,32 @@ void Colleen::update() {
 	case HUNTING_PLAYER:
 		pursuingUpdate();
 		break;
-	case PATROLING:
+	case PATROLLING:
 		patrollingUpdate();
 		break;
 	}
+
+	move();
 }
 
 void Colleen::idleCheckTransitions() {
-	//for (Entity* e : LEVEL->entities) {
-		//if(e.)
-	//}
+	if (idleLastCheckedtransition-- > 0) {
+		return;
+	}
+
+	//Check for newly available beacons
+	idleLastCheckedtransition = 100;
+	Beacon* b = findFarthestBeacon();
+	if (!path.empty())
+		path.clear();
+	bool found = findPathToEntity(b, &path, &goals);
+	if (found) {
+		if (b != NULL) {
+			beaconHistory.push_back(b->id);
+			beaconHistory.pop_front();
+		}
+		state = PATROLLING;
+	}
 }
 
 void Colleen::attackingCheckTransitions() {
@@ -95,11 +103,24 @@ void Colleen::pursuingCheckTransitions() {
 }
 
 void Colleen::patrollingCheckTransitions() {
-
+	if (goals.empty()) {
+		Beacon* b = findFarthestBeacon();
+		if (!path.empty())
+			path.clear();
+		bool found = findPathToEntity(b, &path, &goals);
+		if (!found) {
+			state = IDLE;
+		}
+		else {
+			beaconHistory.push_back(b->id);
+			beaconHistory.pop_front();
+		}
+	}
 }
 
 void Colleen::idleUpdate() {
-
+	currentGoal.x = -1;
+	currentGoal.z = -1; // do nothing, kill goals
 }
 
 void Colleen::attackingUpdate() {
@@ -111,7 +132,31 @@ void Colleen::pursuingUpdate() {
 }
 
 void Colleen::patrollingUpdate() {
+	auto dist = glm::distance(position, currentGoal);
+	if (dist < 0.3 || currentGoal.x == -1 && currentGoal.z == -1) {
+		if (!goals.empty()) {
+			currentGoal = goals.front();
+			goals.pop();
+		}
+		else {
+			// out of goals
+			currentGoal = glm::vec3(-1, 0, -1);
+		}
+	}
+}
 
+void Colleen::move() {
+	if (currentGoal.x != -1 && currentGoal.z != -1) {
+		auto moveDir = glm::normalize(currentGoal - position);
+		front = moveDir;
+		moveVec += front * 0.01f;
+		moveVec = glm::normalize(moveVec) * 0.020f;
+	}
+	else {
+		moveVec *= 0.98f;
+	}
+	position = pushWall(position + moveVec);
+	// detect if she's stuck here?
 }
 
 
@@ -127,36 +172,29 @@ bool Colleen::canSeePlayer() {
 	return seen;
 }
 
-Beacon* Colleen::findNearestBeacon() {
-	float dist = 99999;
-	Beacon* currentClosest = NULL;
+Beacon* Colleen::findFarthestBeacon() {
+	float dist = -1;
+	Beacon* currentFarthest = NULL;
+	std::map<uint32_t, uint32_t> tmpPath;
 	for (Entity* e : LEVEL->entities) {
 		if (e->entityType == BEACON) {
 			float eDist = glm::length(e->position - position);
-			if (eDist < dist || currentClosest == NULL) {
+			if (eDist > dist || currentFarthest == NULL) {
 				Beacon* b = (Beacon*)e;
 				if (std::find(beaconHistory.begin(), beaconHistory.end(), b->id) != beaconHistory.end())
 					continue;
-				dist = eDist;
-				currentClosest = b;
+				tmpPath.clear();
+				// check if 
+				if (GameManager::instance->bfs(
+					position.x, position.z,
+					b->position.x, b->position.z,
+					tmpPath
+				)) {
+					dist = eDist;
+					currentFarthest = b;
+				}
 			}
 		}
 	}
-	return currentClosest;
-}
-
-void Colleen::findPathToBeacon(Beacon* beacon) {
-	if (beacon == NULL) {
-		return;
-	}
-	bool found = GameManager::instance->bfs(
-		(int16_t)position.x, (int16_t)position.z,
-		(int16_t)beacon->position.x, (int16_t)beacon->position.z,
-		path
-	);
-
-	if (goals.empty() && found) {
-
-	}
-
+	return currentFarthest;
 }

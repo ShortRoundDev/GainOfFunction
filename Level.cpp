@@ -258,7 +258,7 @@ glm::vec3 Level::drawDoor(int x, int y, glm::vec3 offset) {
 }
 
 glm::vec3 Level::drawRegular(int x, int y, glm::vec3 offset) {
-
+    return glm::vec3(0);
 }
 
 glm::vec3 Level::drawSign(int x, int y, glm::vec3 offset) {

@@ -84,7 +84,7 @@ void Zombie::update(){
     if (glm::length(pDiff) < 0.45) {
         moveVec = glm::vec3(0);
         (&PLAYER)->hurt(1);
-        (&PLAYER)->moveVec += glm::normalize(glm::vec3(pDiff.x, 0, pDiff.y)) * 0.5f;
+        //(&PLAYER)->moveVec += glm::normalize(glm::vec3(pDiff.x, 0, pDiff.y)) * 0.5f;
         //(&PLAYER)->accel = 1.0f;
     }
 }

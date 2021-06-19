@@ -765,7 +765,6 @@ bool GameManager::bfs(float startX, float startY, float endX, float endY, std::m
     bool foundPath = false;
     
     while(!frontier.empty()){
-        std::cout << "Pathfinding " << std::endl;
         uint32_t current = frontier.front();
         frontier.pop();
         

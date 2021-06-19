@@ -14,7 +14,7 @@ enum ColleenState {
 	IDLE,
 	SEES_PLAYER,
 	HUNTING_PLAYER,
-	PATROLING
+	PATROLLING
 };
 
 class Colleen : public Entity {
@@ -38,16 +38,19 @@ public:
 	void pursuingUpdate();
 	void patrollingUpdate();
 
+	int idleLastCheckedtransition = 0;
+
+	void move();
+
 	//pathfinding
 	bool seesPlayer;
-	glm::vec3 currentGoal;
+	glm::vec3 currentGoal = glm::vec3(-1, -1, -1);
 	std::queue<glm::vec3> goals;
 
 	std::list<int> beaconHistory;
 	std::map<uint32_t, uint32_t> path;
 
-	Beacon* findNearestBeacon();
-	void findPathToBeacon(Beacon* beacon);
+	Beacon* findFarthestBeacon();
 
 	bool canSeePlayer();
 };

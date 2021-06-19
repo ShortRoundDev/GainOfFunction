@@ -250,30 +250,30 @@ void Entity::die(){
     GameManager::deleteEntity(this);
 }
 
-void Entity::findPathToEntity(Entity* entity, std::map<uint32_t, uint32_t> &path, std::queue<glm::vec3> &goals) {
+bool Entity::findPathToEntity(Entity* entity, std::map<uint32_t, uint32_t>* path, std::queue<glm::vec3>* goals) {
     if (entity == NULL) {
-        return;
+        return false;
     }
     return findPathToSpot(
-        (int16_t)position.x, (int16_t)position.z,
+        (int16_t)entity->position.x, (int16_t)entity->position.z,
         path,
         goals
     );
 }
 
-bool Entity::findPathToSpot(int x, int y, std::map<uint32_t, uint32_t>& path, std::queue<glm::vec3>& goals) {
+bool Entity::findPathToSpot(int x, int y, std::map<uint32_t, uint32_t>* path, std::queue<glm::vec3>* goals) {
     bool found = GameManager::instance->bfs(
         (int16_t)position.x, (int16_t)position.z,
         x, y,
-        path
+        *path
     );
     if (found) {
         found = optimizePath(x, y, path, goals);
     }
     return found;
 }
-bool Entity::optimizePath(int fx, int fy, std::map<uint32_t, uint32_t>& path, std::queue<glm::vec3>& goals) {
-    if (goals.empty()) {
+bool Entity::optimizePath(int fx, int fy, std::map<uint32_t, uint32_t>* path, std::queue<glm::vec3>* goals) {
+    if (goals->empty()) {
         //Start backwards
         glm::vec3 last = position;
 
@@ -295,13 +295,13 @@ bool Entity::optimizePath(int fx, int fy, std::map<uint32_t, uint32_t>& path, st
                 &_x, &_y
             )) {
                 last = glm::vec3(itX, 0, itY);
-                goals.push(last);
+                goals->push(last);
                 it = PACK_COORDS(fx, fy);
                 itX = ((float)fx) + 0.5f;
                 itY = ((float)fy) + 0.5f;
             }
             else {
-                it = path[it];
+                it = (*path)[it];
                 itX = (float)(UNPACK_X(it)) + 0.5f;
                 itY = (float)(UNPACK_Y(it)) + 0.5f;
             }
@@ -309,18 +309,18 @@ bool Entity::optimizePath(int fx, int fy, std::map<uint32_t, uint32_t>& path, st
         }
     }
     int counter = 0;
-    if (goals.empty()) { // raycasting failed, just use a regular orthogonal path
-        uint32_t goal = path[PACK_COORDS((int16_t)fx, (int16_t)fy)];
+    if (goals->empty()) { // raycasting failed, just use a regular orthogonal path
+        uint32_t goal = (*path)[PACK_COORDS((int16_t)fx, (int16_t)fy)];
         uint32_t start = PACK_COORDS((int16_t)position.x, (int16_t)position.z);
         while (goal != start && counter < 512) {
             auto x = UNPACK_X(goal);
             auto y = UNPACK_Y(goal);
-            goals.push(glm::vec3(x, 0, y));
-            goal = path[goal];
+            goals->push(glm::vec3(x, 0, y));
+            goal = (*path)[goal];
             counter++;
         }
     }
-    if (goals.empty()) { // something really fucked up here. This should never happen. Treat it as a path not existing
+    if (goals->empty()) { // something really fucked up here. This should never happen. Treat it as a path not existing
         return false;
         std::cerr << "Catastrophic failure" << std::endl;
     }
