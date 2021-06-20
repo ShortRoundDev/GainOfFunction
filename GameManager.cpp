@@ -718,8 +718,8 @@ bool GameManager::castRayToEntities(glm::vec3 start, glm::vec3 dir, glm::vec3* w
             if(glm::length(closestPos - start) > glm::length(hitPos - start)){
                 closestPos = hitPos;
                 closestEnt = e;
+                hit = true;
             }
-            hit = true;
         }
     }
     if(hit){

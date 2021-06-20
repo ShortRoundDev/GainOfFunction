@@ -16,7 +16,7 @@ public:
     ~Player();
     
     float radius = 0.2f;
-    int8_t health = 2;
+    int8_t health = 8;
     
     glm::vec3 pos;
     glm::vec3 moveVec;
