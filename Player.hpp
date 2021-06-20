@@ -3,6 +3,7 @@
 #include "glm/glm.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include "AL/al.h"
 
 #define WEP_PISTOL 1
 #define WEP_RIFLE  2
@@ -15,7 +16,7 @@ public:
     ~Player();
     
     float radius = 0.2f;
-    uint8_t health = 2;
+    int8_t health = 2;
     
     glm::vec3 pos;
     glm::vec3 moveVec;
@@ -51,7 +52,7 @@ public:
     GLuint rifle;
     GLuint rifleAmmoIndicator;
 
-    uint8_t ammo = 5;
+    uint8_t ammo = 50;
     uint8_t rifleAmmo = 0;
     float gunFrame = 0;
     float rifleFrame = 0;

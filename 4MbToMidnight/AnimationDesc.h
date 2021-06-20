@@ -17,7 +17,7 @@ typedef struct _AnimationDesc {
 	void iterate(float amount) {
 		currentFrame += amount;
 		if (currentFrame + start >= end) {
-			currentFrame -= totalFrames();
+			currentFrame = 0;
 			looped = true;
 		}
 	}

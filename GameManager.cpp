@@ -8,6 +8,8 @@
 #include <time.h>
 #include <cstring>
 #include <queue>
+#include <cstdlib>
+#include <time.h>
 
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
@@ -41,6 +43,8 @@ int GameManager::init(GLFWwindow* window, const uint16_t width, const uint16_t h
 
     //instance->load("Resources/e1m1.bin", false);
     instance->loadAvailableSaves();
+
+    srand(time(NULL));
     return 0;
 }
 
@@ -701,7 +705,7 @@ bool GameManager::castRayToEntities(glm::vec3 start, glm::vec3 dir, glm::vec3* w
     Entity* closestEnt = nullptr;
     bool hit = false;
     for(auto e : currentLevel->entities){
-        if(!e->shootable)
+        if(!e->shootable || e->dead)
             continue;
         glm::vec3 hitPos;
         if(castRayToSphere(

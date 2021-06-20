@@ -1,29 +1,84 @@
 #include "Zombie.hpp"
 
 #include <iostream>
+#include <cstdlib>
 #include <cmath>
 
 #include "glm/gtx/rotate_vector.hpp"
 #include "Managers.hpp"
 
+#define IS_HIT (currentAnimation == "rightHit" || currentAnimation == "leftHit" || currentAnimation == "centerHit")
+
 Zombie::Zombie(glm::vec3 pos):
     Entity(
         pos + glm::vec3(0.0f, 0.0f, 0.0f),
-        "Resources/Zombie.png",
+        "Resources/Lank128.png",
         glm::vec2(1.0f, 1.0f),
         glm::vec2(0.25f, 0.5f),
         1003
     ),
-    frontVec(sqrtf(2.0f)/2.0f, 0.0f, sqrt(2.0f)/2.0f),
     currentGoal(-1.0f, -1.0f, -1.0f)
 {
-    animations["idle"] = { 0, 1, 0 };
+    front = glm::vec3(0, 0, 1.0f);
+    totalFrames = 24;
+    totalAngles = 8;
+    animations["idle"] = { 2, 3, 0 };
+    animations["walk"] = { 0, 2, 0 };
+    animations["attack"] = { 4, 7, 0 };
+    animations["rightHit"] = { 8, 11, 0 };
+    animations["leftHit"] = { 11, 14, 0 };
+    animations["centerHit"] = { 14, 17, 0 };
+    animations["die"] = { 17, 23, 0 };
+    currentAnimation = "walk";
     shootable = true;
     health = 7;
 }
 
 void Zombie::update(){
     int x, y;
+
+    if (dead)
+        return;
+
+    if (IS_HIT) {
+        if (animations[currentAnimation].checkLooped())
+            currentAnimation = "idle";
+        else
+            animations[currentAnimation].iterate(0.2f);
+    }
+    else if (currentAnimation == "die") {
+        animations[currentAnimation].iterate(0.2f);
+        if (animations[currentAnimation].checkLooped()) {
+            dead = true;
+            whack();
+            PLAY_I(SoundManager::instance->fleshSound, position);
+            animations[currentAnimation].currentFrame = 6;
+            position.y = -0.1f;
+        }
+        return;
+    }
+    else if (currentAnimation == "attack") {
+        animations[currentAnimation].iterate(0.3f);
+        if (animations[currentAnimation].checkLooped()) {
+            (&PLAYER)->hurt(2);
+            whack();
+            PLAY_I(SoundManager::instance->fleshSound, position);
+
+            auto pDiff = glm::vec2(PLAYER.pos.x, PLAYER.pos.z) - glm::vec2(position.x, position.z);
+            if (glm::length(pDiff) < 0.6f) {
+                (&PLAYER)->moveVec += glm::normalize(glm::vec3(pDiff.x, 0, pDiff.y)) * 0.5f;
+                (&PLAYER)->accel = 1.0f;
+            }
+            currentAnimation = "idle";
+        }
+        return;
+    }
+    else {
+        animations[currentAnimation].iterate(0.07f);
+    }
+
+    
+
     if (PLAYER.health <= 0)
         return;
     bool seen = GameManager::instance->dda(
@@ -63,6 +118,7 @@ void Zombie::update(){
                     goals.pop();
                 } else {
                     // out of goals
+                    currentAnimation = "idle";
                     currentGoal = glm::vec3(-1, 0, -1);
                 }
             }
@@ -81,11 +137,10 @@ void Zombie::update(){
     } else {
     }
     auto pDiff = glm::vec2(PLAYER.pos.x, PLAYER.pos.z) - glm::vec2(position.x, position.z);
-    if (glm::length(pDiff) < 0.45) {
+    if (glm::length(pDiff) < 0.6 && PLAYER.damageBoost <= 0) {
         moveVec = glm::vec3(0);
-        (&PLAYER)->hurt(1);
-        //(&PLAYER)->moveVec += glm::normalize(glm::vec3(pDiff.x, 0, pDiff.y)) * 0.5f;
-        //(&PLAYER)->accel = 1.0f;
+        whoosh();
+        currentAnimation = "attack";
     }
 }
 
@@ -95,6 +150,8 @@ void Zombie::wander() {
 
 void Zombie::attackPlayer(){
     currentGoal = PLAYER.pos;
+    if(!(IS_HIT) && hurtTimer <= 0)
+        currentAnimation = "walk";
 }
 
 void Zombie::goToGoal(glm::vec3 goal) {
@@ -102,7 +159,7 @@ void Zombie::goToGoal(glm::vec3 goal) {
     auto diffVec = goal - position;
     
     auto diff2 = glm::vec2(diffVec.x, diffVec.z);
-    auto front2 = glm::vec2(frontVec.x, frontVec.z);
+    auto front2 = glm::vec2(front.x, front.z);
     
     auto dp = glm::dot(diff2, front2);
     float s = (2.0f * std::signbit(glm::dot(diff2, glm::rotate(front2, (float)M_PI_2)))) - 1;
@@ -113,8 +170,8 @@ void Zombie::goToGoal(glm::vec3 goal) {
     );
     
     if(fabs(angle) > 0.1)
-        frontVec = glm::rotateY(frontVec, angle * 0.04f);
-    moveVec += frontVec * 0.01f;
+        front = glm::rotateY(front, angle * 0.04f);
+    moveVec += front * 0.01f;
     moveVec = glm::normalize(moveVec) * 0.02f;
     //position += moveVec;
 }
@@ -176,4 +233,43 @@ void Zombie::generatePath() {
     if(goals.empty()){
         std::cout << "Catastrophic failure" << std::endl;
     }
+}
+
+void Zombie::hurt(int damage, glm::vec3 hitPos) {
+    float dist;
+    auto side = GraphicsManager::isLeft(position, position + front, hitPos, &dist);
+    std::cout << "Side: " << side << std::endl;
+    if (abs(dist) < 0.04f) {
+        auto flatNormal = CAMERA.cameraFront;
+        moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
+        currentAnimation = "centerHit";
+        std::cout << "Center: " << dist << std::endl;
+    }
+    else if (side) {
+        auto flatNormal = glm::rotate(CAMERA.cameraFront, (float)(-M_PI / 2.0f), glm::vec3(0, 1, 0)) + CAMERA.cameraFront;
+        moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
+        currentAnimation = "leftHit";
+    }
+    else {
+        auto flatNormal = glm::rotate(CAMERA.cameraFront, (float)(M_PI / 2.0f), glm::vec3(0, 1, 0)) + CAMERA.cameraFront;
+        moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
+        currentAnimation = "rightHit";
+    }
+    Entity::hurt(damage, hitPos);
+
+}
+
+void Zombie::die() {
+    currentAnimation = "die";
+    position.y = -0.1f;
+}
+
+void Zombie::whoosh() {
+    auto whooshSound = rand() % 3;
+    PLAY_I(SoundManager::instance->whooshSounds[whooshSound], position);
+}
+
+void Zombie::whack() {
+    auto whackSound = rand() % 2;
+    PLAY_I(SoundManager::instance->whackSounds[whackSound], position);
 }

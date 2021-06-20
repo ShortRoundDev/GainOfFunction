@@ -1,5 +1,6 @@
 #include "Player.hpp"
 
+#include <cstdio>
 #include <iostream>
 #include <tuple>
 
@@ -116,7 +117,7 @@ void Player::move(GLFWwindow* window) {
         this->accel *= 0.7f;
     } else {
         accel += PLAYER_ACCEL;
-        accel = glm::clamp(accel, -0.06f, 0.06f);
+        accel = glm::clamp(accel, -0.03f, 0.03f);
     }
     
     if(moving && (abs(moveDir.x) > 0 || abs(moveDir.z) > 0)){
@@ -480,13 +481,15 @@ void Player::shoot() {
     }
     else if(hitType == 2) {
         GameManager::addEntity(new ZombieGib(entHitPos, glm::vec2(0.2, 0.2)));
+        auto hitSound = rand() % 3;
+        PLAY_I(SoundManager::instance->bulletHitSound[hitSound], pos);
+        PLAY_I(SoundManager::instance->fleshSound, pos);
         if(activeWeapon == WEP_PISTOL){
-            hitEnt->hurt(1);
+            hitEnt->hurt(1, entHitPos);
         } else if(activeWeapon == WEP_RIFLE){
-            hitEnt->hurt(4);
+            hitEnt->hurt(4, entHitPos);
         }
-        auto flatNormal = hitEnt->position - entHitPos;
-        hitEnt->moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
+        
         std::cout << hitEnt->health << std::endl;
     }
 }
@@ -595,7 +598,6 @@ bool Player::shootRifle() {
 }
 
 void Player::hurt(int damage) {
-    return;
     if (health > 0 && damageBoost == 0) {
         health -= damage;
         damageBoost = 50;

@@ -32,7 +32,7 @@ public:
     static float scrnscaleX(int x);
     static float scrnscaleY(int y);
     static GLuint generateVao(float* vertices, size_t size);
-    static bool isLeft(glm::vec3 start, glm::vec3 end, glm::vec3 point);
+    static bool isLeft(glm::vec3 start, glm::vec3 end, glm::vec3 point, float* raw);
 
     static void draw();
     

@@ -31,6 +31,7 @@ public:
     void getCurrentAnimation(AnimationDesc** desc);
 
     int entityType = 0;
+    bool dead = false;
 
     glm::vec3 position;
     glm::vec3 front;
@@ -44,8 +45,8 @@ public:
     static GLuint vao;
     static Shader* shader;
     
-    void hurt(int damage);
-    void die();
+    virtual void hurt(int damage, glm::vec3 pos);
+    virtual void die();
 protected:
     glm::vec3 pushWall(glm::vec3 newPos);
     Shader* shaderOverride = nullptr;

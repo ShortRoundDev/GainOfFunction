@@ -98,10 +98,10 @@ void Entity::draw() {
     int angle = 0;
     if (totalAngles > 1) {
         auto diff = glm::normalize(position - PLAYER.pos);
-        auto rotFront = glm::rotate(front, (float)(-M_PI / 4.0f), glm::vec3(0, 1.0f, 0));
+        auto rotFront = glm::rotate(front, (float)(-M_PI / 3.0f), glm::vec3(0, 1.0f, 0));
 
         auto perspective = acosf(glm::dot(diff, rotFront)) * (180.0 / 3.141592653589793238463);
-        if (GraphicsManager::isLeft(position, position + rotFront, PLAYER.pos)) {
+        if (GraphicsManager::isLeft(position, position + rotFront, PLAYER.pos, NULL)) {
             perspective *= -1;
         }
         perspective += 180;
@@ -237,8 +237,8 @@ glm::vec3 Entity::pushWall(glm::vec3 newPos) {
     return newPos + glm::vec3(xDiff, 0.0f, yDiff);
 }
 
-void Entity::hurt(int damage){
-    hurtTimer = 10;
+void Entity::hurt(int damage, glm::vec3 hitPos){
+    hurtTimer = 20;
     this->health -= damage;
     if(this->health <= 0){
         die();

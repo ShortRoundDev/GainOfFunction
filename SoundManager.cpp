@@ -50,6 +50,20 @@ SoundManager::SoundManager() : sounds(), sourceStack(), context(NULL) {
     loadFile("Resources/Audio/bubble.ogg", false);
     loadFile("Resources/Audio/Basement.ogg", true);
     loadFile("Resources/Audio/WeirdNoises.ogg", false);
+
+    //sfx
+    whackSounds[0] = loadFile("Resources/Audio/PUNCH_DESIGNED_HEAVY_63.ogg", false);
+    whackSounds[1] = loadFile("Resources/Audio/PUNCH_DESIGNED_HEAVY_64.ogg", false);
+
+    bulletHitSound[0] = loadFile("Resources/Audio/PUNCH_DESIGNED_MEDIUM_57.ogg", false);
+    bulletHitSound[1] = loadFile("Resources/Audio/PUNCH_DESIGNED_MEDIUM_58.ogg", false);
+    bulletHitSound[2] = loadFile("Resources/Audio/PUNCH_DESIGNED_MEDIUM_59.ogg", false);
+
+    whooshSounds[0] = loadFile("Resources/Audio/Punch_Very_Fast_Whoosh_01.ogg", false);
+    whooshSounds[1] = loadFile("Resources/Audio/Punch_Very_Fast_Whoosh_02.ogg", false);
+    whooshSounds[2] = loadFile("Resources/Audio/Punch_Very_Fast_Whoosh_03.ogg", false);
+
+    fleshSound = loadFile("Resources/Audio/Flesh Rip 11.ogg", false);
 }
 
 SoundManager::~SoundManager() {

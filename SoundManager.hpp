@@ -17,10 +17,17 @@ public:
     static std::unique_ptr<SoundManager> instance;
     
     static void update();
+
+
     
     SoundManager();
     ~SoundManager();
-    
+
+    ALuint whackSounds[2];
+    ALuint whooshSounds[3];
+    ALuint bulletHitSound[3];
+    ALuint fleshSound;
+
     std::vector<ALuint> sourceStack;
     
     ALCdevice* device;
