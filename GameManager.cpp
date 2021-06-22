@@ -17,6 +17,12 @@
 
 #include "TileDef.h"
 
+#include "Platform.h"
+#ifdef  IS_WIN
+#include "windows.h"
+#endif //  IS_WIN
+
+
 #define TIMESPEED 16666666
 
 float alpha = 1.0f;
@@ -96,8 +102,7 @@ void GameManager::processInput(GLFWwindow* window) {
 GameManager::GameManager(GLFWwindow* window, const uint16_t width, const uint16_t height):
     camera(width, height),
     player(glm::vec3(2.5f, 0.5, 2.5f)),
-    availableSaves(),
-    mapNames()
+    availableSaves()
 {
     accumulator = 0;
     initEventHandlers(window);
@@ -105,11 +110,13 @@ GameManager::GameManager(GLFWwindow* window, const uint16_t width, const uint16_
 
     Entity::init(GraphicsManager::shaders["Entities"]);
     fontShader = GraphicsManager::shaders["Font"];
-    
+ 
+    std::cout << "loading images" << std::endl;
     this->endSplash = GraphicsManager::loadTex("Resources/endLevelSplash.png", GL_BGRA);
     this->mainMenuTexture = GraphicsManager::loadTex("Resources/start.png", GL_BGRA);
     this->loadMenuTexture = GraphicsManager::loadTex("Resources/loadGame.png", GL_BGRA);
     this->menuCursor = GraphicsManager::loadTex("Resources/menuCursor.png", GL_BGRA);
+    std::cout << "setting level aliases" << std::endl;
 
     mapNames["e1m1.bin"] = "Welcome to WHO";
     mapNames["e1m2.bin"] = "Lab Complex";
@@ -151,20 +158,25 @@ void GameManager::load(std::string levelName, bool loadSave, bool saving) {
 
     player.pos = currentLevel->playerPos;
     camera.cameraFront = currentLevel->cameraFront;
+
+    GameManager::instance->player.hasBlueKey = false;
+    GameManager::instance->player.hasRedKey = false;
+    GameManager::instance->player.hasYellowKey = false;
+
     if (saving)
         save();
     if (loadSave) {
         loadSaveFile(levelName);
     }
     else {
-        player.health = 6;
+        //player.health = 6;
     }
+
     state = PLAYING;
 }
 
 void GameManager::loadSaveFile(std::string levelname) {
     std::string saveFileName = "Saves" + levelname.substr(levelname.find("/"), levelname.size()) + ".save";
-    std::cout << saveFileName << std::endl;
     FILE* fp = fopen(saveFileName.c_str(), "rb");
     if (fp == NULL) {
         std::cerr << "Failed to load save file!" << std::endl;
@@ -222,35 +234,31 @@ void GameManager::updateLoadMenu() {
 void GameManager::updateGame() {
     if (showingMessage)
         return;
-    camera.update();
-    player.update(GraphicsManager::instance->window);
-    currentLevel->update();
     if (levelChanging) {
-        std::cout << "Level Changing!" << std::endl;
         if (slideSplash > -1.0f) {
             slideSplash -= 0.02f;
-            std::cout << "Sliding splash..." << std::endl;
             if (slideSplash < -1.0f) {
-                std::cout << "Slid Splash!" << std::endl;
                 slideSplash = -1.0f;
             }
         }
         else if (showDead > 0) {
             showDead--;
             if (showDead <= 0) {
-                std::cout << "Showing dead " << std::endl;
                 SoundManager::instance->playSound("Resources/Audio/pistol.ogg", glm::vec3(0.0f), 1.0f);
             }
         }
         else if (showItems > 0) {
             showItems--;
             if (showItems <= 0) {
-                std::cout << "Showing items " << std::endl;
-
                 SoundManager::instance->playSound("Resources/Audio/pistol.ogg", glm::vec3(0.0f), 1.0f);
             }
         }
+        return;
     }
+    camera.update();
+    player.update(GraphicsManager::instance->window);
+    currentLevel->update();
+
 }
 
 void GameManager::_draw() {
@@ -282,28 +290,20 @@ void GameManager::drawGame() {
     player.draw();
 
     if (levelChanging) {
-        std::cout << "Showing level change screen" << std::endl;
         glClear(GL_DEPTH_BUFFER_BIT);
-        std::cout << "drawing splash" << std::endl;
         GameManager::drawUi(endSplash, 0.0f, slideSplash, 2.0f, 2.0f);
         glClear(GL_DEPTH_BUFFER_BIT);
 
         if (showDead <= 0) {
-            std::cout << "drawing total dead" << std::endl;
             print((std::string("KILLED ") + std::to_string(player.killedEnemies + 0)).c_str(), SCREEN_X(600), SCREEN_Y(768 / 2), 0.05f);
             print((std::string("OF  ") + std::to_string(currentLevel->totalEnemies)).c_str(), SCREEN_X(854), SCREEN_Y(768 / 2), 0.05f);
-            std::cout << "drew total dead" << std::endl;
         }
         if (showItems <= 0) {
-            std::cout << "drawing total items" << std::endl;
             print((std::string("ITEMS  ") + std::to_string(player.collectedItems + 0)).c_str(), SCREEN_X(600), SCREEN_Y(768 / 2 + 64), 0.05f);
             print((std::string("OF  ") + std::to_string(currentLevel->totalItems)).c_str(), SCREEN_X(854), SCREEN_Y(768 / 2 + 64), 0.05f);
-            std::cout << "drew total items" << std::endl;
         }
         if (showDead <= 0 && showItems <= 0) {
-            std::cout << "printing continue" << std::endl;
-            print("PRESS E TO CONTINUE", SCREEN_X(128), SCREEN_Y(768 - 64), 0.08f);
-            std::cout << "printed continue" << std::endl;
+            print("PRESS SPACE TO CONTINUE", SCREEN_X(128), SCREEN_Y(768 - 64), 0.08f);
         }
     }
 
@@ -406,7 +406,16 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
                 PLAY_S("Resources/Audio/pistol.ogg", glm::vec3(0));
                 switch(GameManager::instance->mainMenuOption){
                 case 0:
-                    GameManager::instance->load("Resources/e1m3.bin", false, false);
+                    GameManager::instance->player.health = 6;
+                    GameManager::instance->player.activeWeapon = 0;
+                    GameManager::instance->player.hasPistol = false;
+                    GameManager::instance->player.hasRifle = false;
+                    GameManager::instance->player.hasBlueKey = false;
+                    GameManager::instance->player.hasRedKey = false;
+                    GameManager::instance->player.hasYellowKey = false;
+                    GameManager::instance->player.ammo = 0;
+                    GameManager::instance->player.rifleAmmo = 0;
+                    GameManager::instance->load("Resources/e1m1.bin", false, false);
                     break;
                 case 1: // Load
                     GameManager::instance->state = LOAD_SCREEN;
@@ -454,6 +463,14 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         break;
     }
 
+    if (GameManager::instance->levelChanging && key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+        GameManager::instance->slideSplash = 1.0f;
+        GameManager::instance->showDead = 10;
+        GameManager::instance->showItems = 10;
+        GameManager::instance->levelChanging = false;
+        GameManager::instance->load("Resources/" + std::string(GameManager::instance->nextLevel), false, true);
+    }
+
     if (GameManager::showingMessage && key == GLFW_KEY_Q && action == GLFW_PRESS) {
         GameManager::showingMessage = false;
         GameManager::message = NULL;
@@ -491,7 +508,8 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         }
         GameManager::instance->wireframe ^= true;
     }
-    GameManager::instance->player.keyHandler(window, key, scancode, action, mods);
+    if(!GameManager::instance->levelChanging)
+        GameManager::instance->player.keyHandler(window, key, scancode, action, mods);
 }
 
 void GameManager::initFont() {
@@ -833,6 +851,8 @@ void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos) {
 }
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (GameManager::instance->levelChanging)
+        return;
     if(button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
         (&PLAYER)->shoot();
     }

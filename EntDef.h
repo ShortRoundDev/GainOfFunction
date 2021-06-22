@@ -23,6 +23,9 @@
 #define ZOMBIEGIB	1300
 #define BULLETHOLE	1301
 
+#define THROWER		1050
+#define FIREBALL	1051
+
 #ifndef ENT_CONST_ONLY
 #include "RedKey.hpp"
 #include "BlueKey.hpp"
@@ -40,4 +43,6 @@
 #include "Syringe.hpp"
 
 #include "Beacon.hpp"
+
+#include "Thrower.hpp"
 #endif

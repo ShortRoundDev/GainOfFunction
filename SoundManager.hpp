@@ -18,8 +18,6 @@ public:
     
     static void update();
 
-
-    
     SoundManager();
     ~SoundManager();
 
@@ -27,6 +25,10 @@ public:
     ALuint whooshSounds[3];
     ALuint bulletHitSound[3];
     ALuint fleshSound;
+
+    ALuint ghoulPain[3];
+    ALuint ghoulDeath[2];
+    ALuint ghoulMoan[2];
 
     std::vector<ALuint> sourceStack;
     

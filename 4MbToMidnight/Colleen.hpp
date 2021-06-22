@@ -10,10 +10,10 @@
 #include "glm/glm.hpp"
 
 
-enum ColleenState {
+enum class ColleenState {
 	IDLE,
-	SEES_PLAYER,
-	HUNTING_PLAYER,
+	ATTACKING,
+	PURSUING,
 	PATROLLING
 };
 
@@ -26,7 +26,7 @@ public:
 	ALuint loopSource;
 
 	//ai
-	ColleenState state = IDLE;
+	ColleenState state = ColleenState::IDLE;
 
 	void idleCheckTransitions();
 	void attackingCheckTransitions();
@@ -49,6 +49,9 @@ public:
 
 	std::list<int> beaconHistory;
 	std::map<uint32_t, uint32_t> path;
+
+	//pursuit stuff
+	int pathRecalculationTimer = 0;
 
 	Beacon* findFarthestBeacon();
 

@@ -87,6 +87,12 @@
     <ClCompile Include="Beacon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Thrower.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Fireball.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\EntityVertexShader.glsl">
@@ -197,6 +203,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TileDef.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Thrower.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Fireball.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -60,6 +60,7 @@ public:
     static std::chrono::high_resolution_clock::time_point lastFrame;
 
     bool levelChanging = false;
+    char* nextLevel = NULL;
     float slideSplash = 1.0f;
     int showDead = 10;
     int showItems = 10;

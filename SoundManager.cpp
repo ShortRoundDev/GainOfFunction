@@ -50,6 +50,8 @@ SoundManager::SoundManager() : sounds(), sourceStack(), context(NULL) {
     loadFile("Resources/Audio/bubble.ogg", false);
     loadFile("Resources/Audio/Basement.ogg", true);
     loadFile("Resources/Audio/WeirdNoises.ogg", false);
+    loadFile("Resources/Audio/fire01.ogg", false);
+    loadFile("Resources/Audio/explosion.ogg", false);
 
     //sfx
     whackSounds[0] = loadFile("Resources/Audio/PUNCH_DESIGNED_HEAVY_63.ogg", false);
@@ -64,6 +66,16 @@ SoundManager::SoundManager() : sounds(), sourceStack(), context(NULL) {
     whooshSounds[2] = loadFile("Resources/Audio/Punch_Very_Fast_Whoosh_03.ogg", false);
 
     fleshSound = loadFile("Resources/Audio/Flesh Rip 11.ogg", false);
+
+    ghoulDeath[0] = loadFile("Resources/Audio/GhoulDeath01.ogg", false);
+    ghoulDeath[1] = loadFile("Resources/Audio/GhoulDeath02.ogg", false);
+    
+    ghoulPain[0] = loadFile("Resources/Audio/GhoulPain01.ogg", false);
+    ghoulPain[1] = loadFile("Resources/Audio/GhoulPain02.ogg", false);
+    ghoulPain[2] = loadFile("Resources/Audio/GhoulPain03.ogg", false);
+
+    ghoulMoan[0] = loadFile("Resources/Audio/GhoulMoan01.ogg", false);
+    ghoulMoan[1] = loadFile("Resources/Audio/GhoulMoan02.ogg", false);
 }
 
 SoundManager::~SoundManager() {

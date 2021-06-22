@@ -32,6 +32,7 @@
 #define COORD(x, y) (x + (y * width))
 
 Level::Level(std::string path){
+    std::cout << "New Level" << std::endl;
     fileBuffer = loadFile(path);
     if (fileBuffer == NULL) {
         loadedSuccessfully = false;
@@ -436,10 +437,8 @@ void Level::uploadFloor() {
 }
 
 void Level::loadWalls() {
-    std::cout << std::endl;
     for(int i = 0; i < width * height; i++){
         auto offset = i * sizeof(uint64_t) * 2;
-        std::cout << "Wall " << std::to_string(i) << std::endl;
         walls[i].y = (i/width);
         walls[i].x = i%width;
         auto tex = *((uint16_t*)(wallsLocation + offset));;
@@ -450,7 +449,7 @@ void Level::loadWalls() {
         walls[i].floorTexture = *((uint16_t*)(wallsLocation + offset + 4));
         if(walls[i].floorTexture == 0 && i != 0)
             walls[i].floorTexture = walls[0].floorTexture;
-        uint8_t bitMask = *(wallsLocation + offset + 6);
+        uint16_t bitMask = *((uint16_t*)(wallsLocation + offset + 6));
         walls[i].zone = ((bitMask & 0xff00) >> 8);
         walls[i].isDoor = (bitMask & 1) == 1;
         walls[i].key = (bitMask >> 1) & 0b11;
@@ -458,7 +457,6 @@ void Level::loadWalls() {
         if(TILE_HAS_MESSAGE(tex)){
             walls[i].isSolid = tex == ELEVATOR;
             uint64_t strOff = *((uint64_t*)(wallsLocation + offset + 8));
-            std::cout <<  "STR OFF: " << strOff << std::endl;
             if(strOff != 0) {
                 auto strptr = (fileBuffer + strOff);
                 auto len = strnlen((const char*)strptr, 1024);
@@ -478,7 +476,6 @@ void Level::loadEntities() {
     uint16_t totalEnts = *entitiesLocation;
     entitiesLocation += 2;
     for(int i = 0; i < totalEnts; i++){
-        std::cout << "Loading ent " << std::to_string(i) << std::endl;
         auto offset = i * sizeof(uint16_t) * 3;
         auto x = *((uint16_t*)(entitiesLocation + offset) + 1);
         auto y = *((uint16_t*)(entitiesLocation + offset) + 2);
@@ -521,6 +518,8 @@ Entity* Level::createEntity(uint16_t entNum, int x, int y) {
             return new Colleen(start);
         case BEACON:
             return new Beacon(start);
+        case THROWER:
+            return new Thrower(start);
     }
     return new Entity(
         glm::vec3((float)x + 0.5f, 0, (float)y + 0.5f),

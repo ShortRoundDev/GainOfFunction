@@ -1,6 +1,7 @@
 #include "Player.hpp"
 
 #include <cstdio>
+#include <cmath>
 #include <iostream>
 #include <tuple>
 
@@ -29,6 +30,9 @@ Player::Player(glm::vec3 startPos):
     greenHealth = GraphicsManager::loadTex("Resources/GreenHealth.png", GL_BGRA);
     yellowHealth = GraphicsManager::loadTex("Resources/YellowHealth.png", GL_BGRA);
     redHealth = GraphicsManager::loadTex("Resources/RedHealth.png", GL_BGRA);
+
+    zoneHistory.push_back(-1);
+    zoneHistory.push_back(-1);
 }
 
 Player::~Player(){
@@ -43,6 +47,19 @@ void Player::update(GLFWwindow* window){
         damageBoost--;
     move(window);
     collide();
+
+    Wall* currentWall = TRY_WALL((int)pos.x, (int)pos.z);
+    if (currentWall != NULL) {
+        if (currentWall->zone != currentZone && std::find(zoneHistory.begin(), zoneHistory.end(), currentWall->zone) == zoneHistory.end()) {
+            std::cout << "Zone Transition: " << currentZone << " -> " << currentWall->zone << " #" << zonesCrossed << std::endl;
+            currentZone = currentWall->zone;
+            if (currentZone != -1) { // being chased
+                zonesCrossed++;
+            }
+            zoneHistory.push_back(currentZone);
+            zoneHistory.pop_front();
+        }
+    }
 
     if (health <= 0) {
         if (this->pos.y > 0.1f)
@@ -287,10 +304,8 @@ void Player::keyHandler(GLFWwindow* window, int key, int scancode, int action, i
                 if (wall == NULL)
                     break;
                 if(WALL_IS_KIND(wall, ELEVATOR) && wall->message != NULL && wall->message[0] != 0) {
-                    std::cout << "Using elevator" << std::endl;
-                    //std::cout << wall->message << std::endl;
                     GameManager::instance->levelChanging = true;
-                    std::cout << "Used Elevator" << std::endl;
+                    GameManager::instance->nextLevel = wall->message;
                     break;
                 }
                 if(IS_DOOR((*wall)) && ! wall->isOpen) {
@@ -407,7 +422,7 @@ void Player::draw() {
     Wall* occupied = TRY_WALL(((int)pos.x), ((int)pos.z));
     if (occupied == NULL)
         return;
-    if(WALL_IS_KIND(occupied, ELEVATOR)){
+    if(WALL_IS_KIND(occupied, WALL_SIGN)){
         if(occupied->message != NULL){
             shader->use();
             glBindTexture(GL_TEXTURE_2D, popupSign);
@@ -420,8 +435,6 @@ void Player::draw() {
             ));
             shader->setVec3("offset", glm::vec3(SCREEN_X(512), SCREEN_Y(768 + 768/6), 0.01f));
             glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            
             PRINT(occupied->message, SCREEN_X(150), SCREEN_Y(768/2), 0.08f);
         }
     }
@@ -480,7 +493,7 @@ void Player::shoot() {
         GameManager::addEntity(new BulletHole((pos + (0.99f * (hitPos - pos)))));
     }
     else if(hitType == 2) {
-        GameManager::addEntity(new ZombieGib(entHitPos, glm::vec2(0.2, 0.2)));
+        //GameManager::addEntity(new ZombieGib(entHitPos, glm::vec2(0.2, 0.2)));
         auto hitSound = rand() % 3;
         PLAY_I(SoundManager::instance->bulletHitSound[hitSound], pos);
         PLAY_I(SoundManager::instance->fleshSound, pos);
@@ -488,9 +501,7 @@ void Player::shoot() {
             hitEnt->hurt(1, entHitPos);
         } else if(activeWeapon == WEP_RIFLE){
             hitEnt->hurt(4, entHitPos);
-        }
-        
-        std::cout << hitEnt->health << std::endl;
+        }        
     }
 }
 
@@ -519,7 +530,7 @@ void Player::drawPistol() {
         1.0f
     ));
 
-    auto gunBob = min(glm::length(moveVec), 0.1f);
+    auto gunBob = fmin(glm::length(moveVec), 0.1f);
 
     shader->setVec3("offset", glm::vec3(
         cos(gunTheta) * gunBob,
@@ -558,7 +569,7 @@ void Player::drawRifle() {
         1.0f
     ));
 
-    auto gunBob = min(glm::length(moveVec), 0.1f);
+    auto gunBob = fmin(glm::length(moveVec), 0.1f);
 
     shader->setVec3("offset", glm::vec3(
         cos(gunTheta) * gunBob,
@@ -602,7 +613,6 @@ void Player::hurt(int damage) {
         health -= damage;
         damageBoost = 50;
         if (health <= 0) {
-            std::cout << "Am dead" << std::endl;
             die();
         }
     }

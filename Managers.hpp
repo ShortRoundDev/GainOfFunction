@@ -1,8 +1,9 @@
 #pragma once
+#include "glm/glm.hpp"
+
 #include "GameManager.hpp"
 #include "GraphicsManager.hpp"
 #include "SoundManager.hpp"
-
 #include "Platform.h"
 
 #define CAMERA (GameManager::instance->camera)
@@ -35,10 +36,7 @@
 #define UNPACK_X(x) (((x) & 0xffff0000) >> 16)
 #define UNPACK_Y(y) ((y) & 0x0000ffff)
 
-#define PRINT_VEC3(v) (v.x) << ", " << (v.y) << ", " << (v.z)
+#define DIST_2(a, b) (glm::length(glm::vec2((a).x, (a).z) - glm::vec2((b).x, (b).z)))
 
-#ifdef IS_WIN
-#define M_PI 3.14159
-#define M_PI_2 (M_PI/2.0)
-#endif
+#define PRINT_VEC3(v) (v.x) << ", " << (v.y) << ", " << (v.z)
 

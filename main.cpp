@@ -16,8 +16,6 @@ int main(int argc, char **argv)
     char curdir[1024];
     GetCurrentDirectoryA(1024, curdir);
 
-    std::cout << "Current Dir: " << curdir << std::endl;
-
     std::cout << "initing graphics...";
 
     int error = GraphicsManager::init(
@@ -42,6 +40,9 @@ int main(int argc, char **argv)
     
     auto window = GraphicsManager::instance->window;
     std::cout << "starting game..." << std::endl;
+    if (argc == 2) {
+        GameManager::instance->load(argv[1], false, false);
+    }
     while(!glfwWindowShouldClose(window)) {
         GameManager::processInput(window);
         GameManager::update();

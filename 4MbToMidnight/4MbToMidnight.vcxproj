@@ -181,7 +181,9 @@ xcopy ..\*.glsl $(TargetDir)\....\ /y</Command>
     <ClCompile Include="..\ZombieGib.cpp" />
     <ClCompile Include="Beacon.cpp" />
     <ClCompile Include="Colleen.cpp" />
+    <ClCompile Include="Fireball.cpp" />
     <ClCompile Include="Syringe.cpp" />
+    <ClCompile Include="Thrower.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\BrushSpriteFragmentShader.glsl" />
@@ -219,8 +221,10 @@ xcopy ..\*.glsl $(TargetDir)\....\ /y</Command>
     <ClInclude Include="AnimationDesc.h" />
     <ClInclude Include="Beacon.hpp" />
     <ClInclude Include="Colleen.hpp" />
+    <ClInclude Include="Fireball.hpp" />
     <ClInclude Include="Platform.h" />
     <ClInclude Include="Syringe.hpp" />
+    <ClInclude Include="Thrower.hpp" />
     <ClInclude Include="TileDef.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -13,7 +13,7 @@ Zombie::Zombie(glm::vec3 pos):
     Entity(
         pos + glm::vec3(0.0f, 0.0f, 0.0f),
         "Resources/Lank128.png",
-        glm::vec2(1.0f, 1.0f),
+        glm::vec2(0.85f, 0.85f),
         glm::vec2(0.25f, 0.5f),
         1003
     ),
@@ -29,7 +29,7 @@ Zombie::Zombie(glm::vec3 pos):
     animations["leftHit"] = { 11, 14, 0 };
     animations["centerHit"] = { 14, 17, 0 };
     animations["die"] = { 17, 23, 0 };
-    currentAnimation = "walk";
+    currentAnimation = "idle";
     shootable = true;
     health = 7;
 }
@@ -76,8 +76,6 @@ void Zombie::update(){
     else {
         animations[currentAnimation].iterate(0.07f);
     }
-
-    
 
     if (PLAYER.health <= 0)
         return;
@@ -150,8 +148,10 @@ void Zombie::wander() {
 
 void Zombie::attackPlayer(){
     currentGoal = PLAYER.pos;
-    if(!(IS_HIT) && hurtTimer <= 0)
+    if (!(IS_HIT) && hurtTimer <= 0 && currentAnimation != "walk") {
         currentAnimation = "walk";
+        PLAY_I(SoundManager::instance->ghoulMoan[rand() % 2], position);
+    }
 }
 
 void Zombie::goToGoal(glm::vec3 goal) {
@@ -204,7 +204,6 @@ void Zombie::generatePath() {
             )){
                 last = glm::vec3(itX, 0, itY);
                 goals.push(last);
-                std::cout << "Adding goal " << last.x << ", " << last.z << std::endl;
                 it = PACK_COORDS((int)PLAYER.pos.x, (int)PLAYER.pos.z);
                 itX = (float)((int)PLAYER.pos.x) + 0.5f;
                 itY = (float)((int)PLAYER.pos.z) + 0.5f;
@@ -218,9 +217,7 @@ void Zombie::generatePath() {
     }
     int counter = 0;
     if(goals.empty() && found) { // raycasting failed
-        std::cout << "Adding linear path" << std::endl;
         uint32_t goal = path[PACK_COORDS((int16_t)lastSawPlayer.x, (int16_t)lastSawPlayer.z)];
-        std::cout << "Last saw at " << lastSawPlayer.x << ", " << lastSawPlayer.z << std::endl;
         uint32_t start = PACK_COORDS((int16_t)position.x, (int16_t)position.z);
         while(goal != start && counter < 512) {
             auto x = UNPACK_X(goal);
@@ -230,38 +227,33 @@ void Zombie::generatePath() {
             counter++;
         }
     }
-    if(goals.empty()){
-        std::cout << "Catastrophic failure" << std::endl;
-    }
 }
 
 void Zombie::hurt(int damage, glm::vec3 hitPos) {
     float dist;
     auto side = GraphicsManager::isLeft(position, position + front, hitPos, &dist);
-    std::cout << "Side: " << side << std::endl;
     if (abs(dist) < 0.04f) {
         auto flatNormal = CAMERA.cameraFront;
         moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
         currentAnimation = "centerHit";
-        std::cout << "Center: " << dist << std::endl;
     }
     else if (side) {
         auto flatNormal = glm::rotate(CAMERA.cameraFront, (float)(-M_PI / 2.0f), glm::vec3(0, 1, 0)) + CAMERA.cameraFront;
         moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
-        currentAnimation = "leftHit";
     }
     else {
         auto flatNormal = glm::rotate(CAMERA.cameraFront, (float)(M_PI / 2.0f), glm::vec3(0, 1, 0)) + CAMERA.cameraFront;
         moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
-        currentAnimation = "rightHit";
     }
     Entity::hurt(damage, hitPos);
-
+    PLAY_I(SoundManager::instance->ghoulPain[rand() % 3], position);
 }
 
 void Zombie::die() {
     currentAnimation = "die";
     position.y = -0.1f;
+    (&PLAYER)->killedEnemies++;
+    PLAY_I(SoundManager::instance->ghoulDeath[rand() % 2], position);
 }
 
 void Zombie::whoosh() {

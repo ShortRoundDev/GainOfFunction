@@ -1,5 +1,7 @@
 #pragma once
 
+#include <list>
+
 #include "glm/glm.hpp"
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -16,7 +18,7 @@ public:
     ~Player();
     
     float radius = 0.2f;
-    int8_t health = 8;
+    int8_t health = 6;
     
     glm::vec3 pos;
     glm::vec3 moveVec;
@@ -25,6 +27,10 @@ public:
     
     int collectedItems = 0;
     int killedEnemies = 0;
+
+    int zonesCrossed = -1;
+    int currentZone = 0;
+    std::list<int> zoneHistory;
 
     float healthFrame = 0;
     GLuint greenHealth;

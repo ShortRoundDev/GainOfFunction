@@ -41,32 +41,32 @@ void Colleen::update() {
 
 	// check transitions
 	switch (state) {
-	case IDLE:
+	case ColleenState::IDLE:
 		idleCheckTransitions();
 		break;
-	case SEES_PLAYER:
+	case ColleenState::ATTACKING:
 		attackingCheckTransitions();
 		break;
-	case HUNTING_PLAYER:
+	case ColleenState::PURSUING:
 		pursuingCheckTransitions();
 		break;
-	case PATROLLING:
+	case ColleenState::PATROLLING:
 		patrollingCheckTransitions();
 		break;
 	}
 
 	// update
 	switch (state) {
-	case IDLE:
+	case ColleenState::IDLE:
 		idleUpdate();
 		break;
-	case SEES_PLAYER:
+	case ColleenState::ATTACKING:
 		attackingUpdate();
 		break;
-	case HUNTING_PLAYER:
+	case ColleenState::PURSUING:
 		pursuingUpdate();
 		break;
-	case PATROLLING:
+	case ColleenState::PATROLLING:
 		patrollingUpdate();
 		break;
 	}
@@ -76,6 +76,12 @@ void Colleen::update() {
 
 void Colleen::idleCheckTransitions() {
 	if (idleLastCheckedtransition-- > 0) {
+		return;
+	}
+
+	if (canSeePlayer()) {
+		std::cout << "Idle -> Attacking" << std::endl;
+		state = ColleenState::ATTACKING;
 		return;
 	}
 
@@ -90,28 +96,48 @@ void Colleen::idleCheckTransitions() {
 			beaconHistory.push_back(b->id);
 			beaconHistory.pop_front();
 		}
-		state = PATROLLING;
+		state = ColleenState::PATROLLING;
+		std::cout << "Idle -> Patrolling" << std::endl;
 	}
 }
 
 void Colleen::attackingCheckTransitions() {
-
+	if (!canSeePlayer()) {
+		(&PLAYER)->zonesCrossed = 0;
+		std::cout << "Attacking -> Pursuing" << std::endl;
+		state = ColleenState::PURSUING;
+	}
 }
 
 void Colleen::pursuingCheckTransitions() {
-
+	if (canSeePlayer()) {
+		pathRecalculationTimer = 0;
+		std::cout << "Pursuing -> Attacking" << std::endl;
+		state = ColleenState::ATTACKING;
+	}
+	else if (PLAYER.zonesCrossed == 3) {
+		pathRecalculationTimer = 0;
+		state = ColleenState::PATROLLING;
+		std::cout << "Pursuing -> Patrolling" << std::endl;
+	}
 }
 
 void Colleen::patrollingCheckTransitions() {
-	if (goals.empty()) {
+	if (canSeePlayer()) {
+		state = ColleenState::ATTACKING;
+		std::cout << "Patrolling -> Attacking" << std::endl;
+	}
+	else if (goals.empty()) {
 		Beacon* b = findFarthestBeacon();
 		if (!path.empty())
 			path.clear();
 		bool found = findPathToEntity(b, &path, &goals);
 		if (!found) {
-			state = IDLE;
+			std::cout << "Patrolling -> Idle" << std::endl;
+			state = ColleenState::IDLE;
 		}
 		else {
+			std::cout << "New Beacon: " << PRINT_VEC3(b->position) << std::endl;
 			beaconHistory.push_back(b->id);
 			beaconHistory.pop_front();
 		}
@@ -124,10 +150,31 @@ void Colleen::idleUpdate() {
 }
 
 void Colleen::attackingUpdate() {
-
+	currentGoal = glm::vec3(PLAYER.pos.x, position.y, PLAYER.pos.z);
 }
 
 void Colleen::pursuingUpdate() {
+	if (pathRecalculationTimer == 0) {
+		if (!path.empty())
+			path.clear();
+		if (!goals.empty()) {
+			std::queue<glm::vec3> empty;
+			std::swap(goals, empty);
+		}
+		if (!Entity::findPathToSpot((int)PLAYER.pos.x, (int)PLAYER.pos.z, &path, &goals)) { // shouldn't happen
+			pathRecalculationTimer = 0;
+			std::cout << "Pursuing -> Patrolling (!)" << std::endl;
+			state = ColleenState::PATROLLING;
+			return;
+		}
+		currentGoal = glm::vec3(-1);
+		pathRecalculationTimer = 100;
+	}
+	if ((currentGoal.x == -1 && currentGoal.z == -1) || DIST_2(currentGoal, position) < 0.3 && !goals.empty()) {
+		currentGoal = goals.front();
+		goals.pop();
+	}
+	pathRecalculationTimer--;
 
 }
 
