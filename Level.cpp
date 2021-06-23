@@ -29,6 +29,12 @@
 #define DOOR_BOTTOM_LEFT    0.0f, 1.0f
 #define DOOR_TOP_LEFT       0.0f, DOOR_MAX_Y
 
+#define DRAW_WIDTH          10
+#define DRAW_HEIGHT         10
+
+#define MIN(x, y) ((x) > (y) ? (y) : (x))
+#define MAX(x, y) ((x) < (y) ? (y) : (x))
+
 #define COORD(x, y) (x + (y * width))
 
 Level::Level(std::string path){
@@ -174,8 +180,8 @@ void Level::draw() {
         wallShader->setFloat("minBright", 0.0f);
     }
 
-    for(int i = 0; i < height; i++) {
-        for(int j = 0; j < width; j++) {
+    for(int i = MAX(0, (int)(PLAYER.pos.z - DRAW_HEIGHT)); i < MIN(height, (int)(PLAYER.pos.z + DRAW_HEIGHT)); i++) {
+        for(int j = MAX(0, (int)(PLAYER.pos.x - DRAW_WIDTH)); j < MIN(width, (int)(PLAYER.pos.x + DRAW_WIDTH)); j++) {
             auto tile = COORD(j, i);
             auto w = walls + tile;
             auto tileNum = walls[tile].wallTexture;
@@ -239,7 +245,8 @@ void Level::draw() {
         Entity::shader->setFloat("minBright", 0.0f);
     }
     for(auto e : entities){
-        e->draw();
+        if(DIST_2(e->position, PLAYER.pos) < 10)
+            e->draw();
     }
 }
 

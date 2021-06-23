@@ -28,6 +28,8 @@ public:
     int collectedItems = 0;
     int killedEnemies = 0;
 
+    int colleenKillingCooldown = -1;
+
     int zonesCrossed = -1;
     int currentZone = 0;
     std::list<int> zoneHistory;
@@ -50,16 +52,16 @@ public:
     float gunTheta = 0.0f;
     
     bool hasPistol = true;
-    bool hasRifle = false;
-    int activeWeapon = 0;
+    bool hasRifle = true;
+    int activeWeapon = 1;
     
     GLuint gun;
     GLuint pistolAmmoIndicator;
     GLuint rifle;
     GLuint rifleAmmoIndicator;
 
-    uint8_t ammo = 50;
-    uint8_t rifleAmmo = 0;
+    uint8_t ammo = 5;
+    uint8_t rifleAmmo = 2;
     float gunFrame = 0;
     float rifleFrame = 0;
     

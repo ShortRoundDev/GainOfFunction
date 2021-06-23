@@ -1,6 +1,7 @@
 #include "Player.hpp"
 
 #include <cstdio>
+#include <cstdlib>
 #include <cmath>
 #include <iostream>
 #include <tuple>
@@ -48,6 +49,20 @@ void Player::update(GLFWwindow* window){
     move(window);
     collide();
 
+    if (colleenKillingCooldown > 0) {
+        pos.y = 0.5f + ((((float)(100 - colleenKillingCooldown)) / 100.0f) * 0.3f);
+        std::cout << pos.y << std::endl;
+        colleenKillingCooldown--;
+    }
+    else if (colleenKillingCooldown == 0) {
+        health = 0;
+        std::cout << "Dead" << std::endl;
+        colleenKillingCooldown = -2;
+        auto whackSound = rand() % 2;
+        PLAY_I(SoundManager::instance->whackSounds[whackSound], pos);
+        PLAY_I(SoundManager::instance->fleshSound, pos);
+    }
+
     Wall* currentWall = TRY_WALL((int)pos.x, (int)pos.z);
     if (currentWall != NULL) {
         if (currentWall->zone != currentZone && std::find(zoneHistory.begin(), zoneHistory.end(), currentWall->zone) == zoneHistory.end()) {
@@ -62,10 +77,20 @@ void Player::update(GLFWwindow* window){
     }
 
     if (health <= 0) {
-        if (this->pos.y > 0.1f)
-            this->pos.y -= 0.01f;
-        if (this->dieMessageLocation < 64.0f)
+        if (this->pos.y > 0.1f) {
+            if (colleenKillingCooldown == -1) {
+                this->pos.y -= 0.01f;
+            }
+            else if (colleenKillingCooldown == -2) {
+                this->pos.y -= 0.04f;
+            }
+        }
+        else {
+            this->pos.y = 0.1f;
+        }
+        if (this->dieMessageLocation < 64.0f) {
             this->dieMessageLocation += 0.5f;
+        }
         return;
     }
 
@@ -108,7 +133,7 @@ void Player::move(GLFWwindow* window) {
     bool moving = false;
     Camera* camera = &(GameManager::instance->camera);
     moveDir = glm::vec3(0, 0, 0);
-    if (health > 0) {
+    if (health > 0 && colleenKillingCooldown == -1) {
         if (GameManager::keyMap[GLFW_KEY_W]) {
             moving = true;
             moveDir += glm::normalize(glm::vec3(camera->cameraFront.x, 0.0f, camera->cameraFront.z));
@@ -260,9 +285,13 @@ glm::vec3 Player::pushWall(glm::vec3 newPos) {
 }
 
 void Player::keyHandler(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (colleenKillingCooldown > 0) {
+        return;
+    }
     if (health <= 0) {
         if (key == GLFW_KEY_E && action == GLFW_PRESS) {
             dieMessageLocation = -32.0f;
+            colleenKillingCooldown = -1;
             GameManager::instance->load("Resources/" + GameManager::instance->currentLevel->levelName, true, false);
         }
         else if (key == GLFW_KEY_Q && action == GLFW_PRESS) {

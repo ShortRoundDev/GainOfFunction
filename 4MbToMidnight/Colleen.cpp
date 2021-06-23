@@ -32,7 +32,7 @@ Colleen::Colleen(glm::vec3 pos)
 }
 
 Colleen::~Colleen() {
-
+	alSourceStop(loopSource);
 }
 
 void Colleen::update() {
@@ -102,7 +102,12 @@ void Colleen::idleCheckTransitions() {
 }
 
 void Colleen::attackingCheckTransitions() {
-	if (!canSeePlayer()) {
+	if (PLAYER.health <= 0) {
+		state = ColleenState::PATROLLING;
+		std::cout << "Attacking -> Patrolling" << std::endl;
+		return;
+	}
+	else if (!canSeePlayer()) {
 		(&PLAYER)->zonesCrossed = 0;
 		std::cout << "Attacking -> Pursuing" << std::endl;
 		state = ColleenState::PURSUING;
@@ -151,6 +156,13 @@ void Colleen::idleUpdate() {
 
 void Colleen::attackingUpdate() {
 	currentGoal = glm::vec3(PLAYER.pos.x, position.y, PLAYER.pos.z);
+	if (DIST_2(PLAYER.pos, position) < 0.5f) {
+		// kill player
+		moveVec = glm::vec3(0);
+		currentGoal = glm::vec3(-1);
+		if(PLAYER.colleenKillingCooldown == -1)
+			(&PLAYER)->colleenKillingCooldown = 100;
+	}
 }
 
 void Colleen::pursuingUpdate() {
@@ -197,7 +209,10 @@ void Colleen::move() {
 		auto moveDir = glm::normalize(currentGoal - position);
 		front = moveDir;
 		moveVec += front * 0.01f;
-		moveVec = glm::normalize(moveVec) * 0.020f;
+		if(state == ColleenState::ATTACKING || state == ColleenState::PURSUING)
+			moveVec = glm::normalize(moveVec) * 0.02f;
+		else
+			moveVec = glm::normalize(moveVec) * 0.01f;
 	}
 	else {
 		moveVec *= 0.98f;

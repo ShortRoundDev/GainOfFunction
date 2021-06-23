@@ -81,7 +81,7 @@ void GameManager::update() {
 }
 
 void GameManager::draw() {
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
     GameManager::instance->_draw();
@@ -162,6 +162,7 @@ void GameManager::load(std::string levelName, bool loadSave, bool saving) {
     GameManager::instance->player.hasBlueKey = false;
     GameManager::instance->player.hasRedKey = false;
     GameManager::instance->player.hasYellowKey = false;
+    GameManager::instance->player.colleenKillingCooldown = -1;
 
     if (saving)
         save();
@@ -180,6 +181,7 @@ void GameManager::loadSaveFile(std::string levelname) {
     FILE* fp = fopen(saveFileName.c_str(), "rb");
     if (fp == NULL) {
         std::cerr << "Failed to load save file!" << std::endl;
+        player.health = 6;
         return;
     }
 
