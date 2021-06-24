@@ -64,6 +64,7 @@ public:
     float slideSplash = 1.0f;
     int showDead = 10;
     int showItems = 10;
+    int showSecrets = 10;
     GLuint endSplash;
     
     // Instance stuff

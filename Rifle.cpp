@@ -27,7 +27,7 @@ void Rifle::update(){
         if(!player->hasRifle)
             player->activeWeapon = 2;
         player->hasRifle = true;
-        player->rifleAmmo += 10;
+        player->rifleAmmo += 5;
         player->collectedItems++;
         //SoundManager::instance->playSound("Resources/Audio/terminal_05.ogg", glm::vec3(0));
         PLAY_S("Resources/Audio/pickupRifle.ogg", glm::vec3(0.0f));

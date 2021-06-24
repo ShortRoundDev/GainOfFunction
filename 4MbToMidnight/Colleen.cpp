@@ -4,6 +4,7 @@
 
 #include "Managers.hpp"
 #include "glm/gtx/rotate_vector.hpp"
+#include "Fireball.hpp"
 
 #define ENT_CONST_ONLY
 #include "EntDef.h"
@@ -19,6 +20,9 @@ Colleen::Colleen(glm::vec3 pos)
 {
 	currentAnimation = "float";
 	animations["float"] = { 0, 1, 0 };
+	animations["dead"] = { 1, 5, 0 };
+	
+	totalFrames = 6;
 	totalAngles = 4;
 	front = glm::vec3(0, 0, -1);
 	auto loopBuffer = SoundManager::instance->sounds.find("Resources/Audio/WeirdNoises.ogg");
@@ -29,15 +33,41 @@ Colleen::Colleen(glm::vec3 pos)
 	beaconHistory.push_back(-1);
 	beaconHistory.push_back(-1);
 	beaconHistory.push_back(-1);
+
+	healthbarTex = GraphicsManager::instance->loadTex("Resources/healthbar.png", GL_BGRA);
+	health = 40;
 }
 
 Colleen::~Colleen() {
-	alSourceStop(loopSource);
+	if(loopSource != -1)
+		alSourceStop(loopSource);
+	loopSource = -1;
+	LEVEL->colleen = NULL;
 }
 
 void Colleen::update() {
 	alSource3f(loopSource, AL_POSITION, position.x, position.y, position.z);
 
+	if (currentAnimation == "dead") {
+		if (!dead) {
+			animations[currentAnimation].iterate(0.03f);
+			if (animations[currentAnimation].checkLooped()) {
+				dead = true;
+				animations[currentAnimation].currentFrame = 4;
+				if(loopSource != -1)
+					alSourceStop(loopSource);
+				loopSource = -1;
+			}
+		}
+		return;
+	}
+
+	shootable = (LEVEL->switchesOff == 0);
+	if (shootable && healthbarWidth < 1024) {
+		healthbarWidth += 10;
+		if (healthbarWidth > 1024)
+			healthbarWidth = 1024;
+	}
 
 	// check transitions
 	switch (state) {
@@ -90,8 +120,7 @@ void Colleen::idleCheckTransitions() {
 	Beacon* b = findFarthestBeacon();
 	if (!path.empty())
 		path.clear();
-	bool found = findPathToEntity(b, &path, &goals);
-	if (found) {
+	if (b != NULL && findPathToEntity(b, &path, &goals)) {
 		if (b != NULL) {
 			beaconHistory.push_back(b->id);
 			beaconHistory.pop_front();
@@ -120,9 +149,27 @@ void Colleen::pursuingCheckTransitions() {
 		std::cout << "Pursuing -> Attacking" << std::endl;
 		state = ColleenState::ATTACKING;
 	}
-	else if (PLAYER.zonesCrossed == 3) {
+	else if (PLAYER.zonesCrossed == 3 || PLAYER.actualZone == 8) {
 		pathRecalculationTimer = 0;
 		state = ColleenState::PATROLLING;
+
+		//get new route
+		std::queue<glm::vec3> empty;
+		std::swap(goals, empty);
+
+		Beacon* b = findFarthestBeacon();
+		if (!path.empty())
+			path.clear();
+		if (b == NULL || !findPathToEntity(b, &path, &goals)) {
+			std::cout << "Pursuing -> Idle (!)" << std::endl;
+			state = ColleenState::IDLE;
+		}
+		else {
+			std::cout << "New Beacon: " << PRINT_VEC3(b->position) << std::endl;
+			beaconHistory.push_back(b->id);
+			beaconHistory.pop_front();
+		}
+
 		std::cout << "Pursuing -> Patrolling" << std::endl;
 	}
 }
@@ -136,8 +183,7 @@ void Colleen::patrollingCheckTransitions() {
 		Beacon* b = findFarthestBeacon();
 		if (!path.empty())
 			path.clear();
-		bool found = findPathToEntity(b, &path, &goals);
-		if (!found) {
+		if (b == NULL || !findPathToEntity(b, &path, &goals)) {
 			std::cout << "Patrolling -> Idle" << std::endl;
 			state = ColleenState::IDLE;
 		}
@@ -156,6 +202,19 @@ void Colleen::idleUpdate() {
 
 void Colleen::attackingUpdate() {
 	currentGoal = glm::vec3(PLAYER.pos.x, position.y, PLAYER.pos.z);
+	if(shootable && volleyCooldown <= 0 && fireballCooldown <= 0){
+		GameManager::addEntity(new Fireball(position + glm::vec3(0, 0.4f, 0), front));
+		fireballCooldown = 10;
+		fireballs--;
+		if (fireballs <= 0) {
+			fireballs = 3;
+			volleyCooldown = 100;
+		}
+	}
+	else {
+		volleyCooldown--;
+		fireballCooldown--;
+	}
 	if (DIST_2(PLAYER.pos, position) < 0.5f) {
 		// kill player
 		moveVec = glm::vec3(0);
@@ -208,11 +267,18 @@ void Colleen::move() {
 	if (currentGoal.x != -1 && currentGoal.z != -1) {
 		auto moveDir = glm::normalize(currentGoal - position);
 		front = moveDir;
-		moveVec += front * 0.01f;
-		if(state == ColleenState::ATTACKING || state == ColleenState::PURSUING)
-			moveVec = glm::normalize(moveVec) * 0.02f;
-		else
-			moveVec = glm::normalize(moveVec) * 0.01f;
+		auto _moveVec = front * 0.01f;
+		if (_moveVec != glm::vec3(0)) {
+			if ((state == ColleenState::ATTACKING || state == ColleenState::PURSUING) && !shootable)
+				moveVec = glm::normalize(_moveVec) * 0.02f;
+			else if (shootable)
+				moveVec = glm::normalize(_moveVec) * 0.017f;
+			else
+				moveVec = glm::normalize(_moveVec) * 0.01f;
+		}
+		else {
+			moveVec *= 0.98f;
+		}
 	}
 	else {
 		moveVec *= 0.98f;
@@ -223,7 +289,14 @@ void Colleen::move() {
 
 
 bool Colleen::canSeePlayer() {
+
+#ifdef PLAYER_INVISIBLE
+	return false;
+#endif
+
 	if (PLAYER.health <= 0)
+		return false;
+	if (PLAYER.actualZone == 8 && !shootable)
 		return false;
 	int x, y;
 	bool seen = GameManager::instance->dda(
@@ -259,4 +332,12 @@ Beacon* Colleen::findFarthestBeacon() {
 		}
 	}
 	return currentFarthest;
+}
+
+void Colleen::hurt(int damage, glm::vec3 pos) {
+	Entity::hurt(damage, pos);
+}
+
+void Colleen::die() {
+	currentAnimation = "dead";
 }

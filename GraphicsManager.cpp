@@ -255,7 +255,6 @@ uint8_t* GraphicsManager::loadBitMap(std::string path, uint32_t* width, uint32_t
     return data;
 }
 
-
 // Framework stuff
 void frameBufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);

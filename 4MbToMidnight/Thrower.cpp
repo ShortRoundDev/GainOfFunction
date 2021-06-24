@@ -279,15 +279,14 @@ void Thrower::hurt(int damage, glm::vec3 hitPos) {
         moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
     }
     Entity::hurt(damage, hitPos);
-    PLAY_I(SoundManager::instance->ghoulPain[rand() % 3], position);
+    PLAY_I(SoundManager::instance->ghoulPain[rand() % 2], position);
     attackCooldown = 20;
     animations["attack"].currentFrame = 0;
 
 }
 
 void Thrower::whoosh() {
-    auto whooshSound = rand() % 3;
-    PLAY_I(SoundManager::instance->whooshSounds[whooshSound], position);
+    PLAY_I(SoundManager::instance->whooshSound, position);
 }
 
 void Thrower::whack() {

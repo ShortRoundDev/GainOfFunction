@@ -28,8 +28,11 @@ public:
     
     ALuint ambience = 0;
 
+    int totalSecrets = 0;
     int totalItems = 0;
     int totalEnemies = 0;
+    int switchesOff = -1;
+    int switchNotification = 0;
 
     bool loadedSuccessfully;
     
@@ -44,6 +47,7 @@ public:
     GLuint ceilingTexture;
     
     Shader* wallShader;
+    Entity* colleen;
 
     glm::vec3 playerPos;
     glm::vec3 cameraFront;

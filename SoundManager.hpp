@@ -22,11 +22,11 @@ public:
     ~SoundManager();
 
     ALuint whackSounds[2];
-    ALuint whooshSounds[3];
-    ALuint bulletHitSound[3];
+    ALuint whooshSound;
+    ALuint bulletHitSound[2];
     ALuint fleshSound;
 
-    ALuint ghoulPain[3];
+    ALuint ghoulPain[2];
     ALuint ghoulDeath[2];
     ALuint ghoulMoan[2];
 

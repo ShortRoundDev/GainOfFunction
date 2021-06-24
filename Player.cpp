@@ -65,6 +65,7 @@ void Player::update(GLFWwindow* window){
 
     Wall* currentWall = TRY_WALL((int)pos.x, (int)pos.z);
     if (currentWall != NULL) {
+        actualZone = currentWall->zone;
         if (currentWall->zone != currentZone && std::find(zoneHistory.begin(), zoneHistory.end(), currentWall->zone) == zoneHistory.end()) {
             std::cout << "Zone Transition: " << currentZone << " -> " << currentWall->zone << " #" << zonesCrossed << std::endl;
             currentZone = currentWall->zone;
@@ -307,6 +308,12 @@ void Player::keyHandler(GLFWwindow* window, int key, int scancode, int action, i
         if (occupied != NULL && !GameManager::showingMessage && WALL_IS_KIND(occupied, TV_SCREEN) && occupied->message != NULL) {
             GameManager::displayMessage(occupied->message);
         }
+        else if (WALL_IS_KIND(occupied, SWITCH_OFF)) {
+            occupied->wallTexture = SWITCH_ON;
+            PLAY_S("Resources/Audio/click.ogg", pos);
+            LEVEL->switchesOff--;
+            LEVEL->switchNotification = 200;
+        }
 
         auto look = glm::normalize(glm::vec3(CAMERA.cameraFront.x, 0.0f, CAMERA.cameraFront.z));
         auto lookX = look.x;
@@ -337,7 +344,11 @@ void Player::keyHandler(GLFWwindow* window, int key, int scancode, int action, i
                     GameManager::instance->nextLevel = wall->message;
                     break;
                 }
-                if(IS_DOOR((*wall)) && ! wall->isOpen) {
+                if(IS_DOOR((*wall)) && !wall->isOpen) {
+                    if (wall->wallTexture == 1 || wall->wallTexture == 2) {
+                        // secret door
+                        foundSecrets++;
+                    }
                     wall->open();
                     break;
                 }
@@ -470,6 +481,9 @@ void Player::draw() {
     if (WALL_IS_KIND(occupied, TV_SCREEN) && !GameManager::showingMessage) {
         PRINT("Press E to read", SCREEN_X(1024/2 - 128), SCREEN_Y(768/2), 0.05);
     }
+    else if (WALL_IS_KIND(occupied, SWITCH_OFF)) {
+        PRINT("Press E to Active", SCREEN_X(1024 / 2 - 128), SCREEN_Y(768 / 2), 0.05);
+    }
 }
 
 void Player::shoot() {
@@ -523,7 +537,7 @@ void Player::shoot() {
     }
     else if(hitType == 2) {
         //GameManager::addEntity(new ZombieGib(entHitPos, glm::vec2(0.2, 0.2)));
-        auto hitSound = rand() % 3;
+        auto hitSound = rand() % 2;
         PLAY_I(SoundManager::instance->bulletHitSound[hitSound], pos);
         PLAY_I(SoundManager::instance->fleshSound, pos);
         if(activeWeapon == WEP_PISTOL){
@@ -536,7 +550,7 @@ void Player::shoot() {
 
 void Player::drawPistol() {
     auto shader = SHADERS["UI"];
-    
+
     glBindTexture(GL_TEXTURE_2D, pistolAmmoIndicator);
     shader->setVec3("scale", glm::vec3(
         SCREEN_W(128),
@@ -575,7 +589,7 @@ void Player::drawPistol() {
 
 void Player::drawRifle() {
     auto shader = SHADERS["UI"];
-    
+
     glBindTexture(GL_TEXTURE_2D, rifleAmmoIndicator);
     shader->setVec3("scale", glm::vec3(
         SCREEN_W(128),
@@ -602,7 +616,7 @@ void Player::drawRifle() {
 
     shader->setVec3("offset", glm::vec3(
         cos(gunTheta) * gunBob,
-        SCREEN_Y(768) - (1 + (sin(gunTheta * 2))) *  gunBob,
+        SCREEN_Y(768) - (1 + (sin(gunTheta * 2))) * gunBob,
         0.0f
     ));
     glDrawArrays(GL_TRIANGLES, 0, 6);

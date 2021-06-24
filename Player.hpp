@@ -25,6 +25,7 @@ public:
     glm::vec3 moveDir;
     float accel = 0;
     
+    int foundSecrets = 0;
     int collectedItems = 0;
     int killedEnemies = 0;
 
@@ -32,6 +33,7 @@ public:
 
     int zonesCrossed = -1;
     int currentZone = 0;
+    int actualZone = 0;
     std::list<int> zoneHistory;
 
     float healthFrame = 0;

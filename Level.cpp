@@ -220,7 +220,7 @@ void Level::draw() {
                 offset = drawDoor(j, i, offset);
             } else if(tileNum == WALL_SIGN){
                 offset = drawSign(j, i, offset);
-            } else if (tileNum == TV_SCREEN) {
+            } else if (tileNum == TV_SCREEN || tileNum == SWITCH_ON || tileNum == SWITCH_OFF) {
                 offset = drawTv(j, i, offset);
             }
             else {
@@ -248,13 +248,27 @@ void Level::draw() {
         if(DIST_2(e->position, PLAYER.pos) < 10)
             e->draw();
     }
+    if (switchNotification > 0 && switchesOff != -1) {
+        PRINT((std::to_string(switchesOff) + " SWITCHES LEFT").c_str(), SCREEN_X(512 - 164), SCREEN_Y(64), 0.06f);
+        switchNotification--;
+    }
+    glClear(GL_DEPTH_BUFFER_BIT);
+    if (colleen != NULL && colleen->shootable) {
+        float healthPercent = ((float)colleen->health) / 40.0f;
+        GameManager::drawUi(
+            ((Colleen*)colleen)->healthbarTex,
+            0.0f, SCREEN_Y(128),
+            SCREEN_W((int)(((float)((Colleen*)colleen)->healthbarWidth) * healthPercent)), SCREEN_H(32)
+        );
+    }
+
 }
 
 glm::vec3 Level::drawDoor(int x, int y, glm::vec3 offset) {
     auto left = COORD(x - 1, y);
     auto right = COORD(x + 1, y);
 
-    if (left >= 0 && right < width * height && (walls[left].wallTexture != 0 && walls[right].wallTexture != 0)) {
+    if (left >= 0 && right < width * height && (walls[left].wallTexture != 0 && walls[right].wallTexture != 0) && !IS_DOOR(walls[left]) && !IS_DOOR(walls[right])) {
         wallShader->setVec3("scale", glm::vec3(1.0f, 1.0f, 0.5f));
         offset.z += 0.25f;
     }
@@ -460,6 +474,10 @@ void Level::loadWalls() {
         walls[i].zone = ((bitMask & 0xff00) >> 8);
         walls[i].isDoor = (bitMask & 1) == 1;
         walls[i].key = (bitMask >> 1) & 0b11;
+
+        if ((tex == 1 || tex == 2) && walls[i].isDoor) { // secret door
+            totalSecrets++;
+        }
         
         if(TILE_HAS_MESSAGE(tex)){
             walls[i].isSolid = tex == ELEVATOR;
@@ -472,8 +490,13 @@ void Level::loadWalls() {
                     strncpy(walls[i].message, (const char*)strptr, len);
             }
         }else{
-            walls[i].isSolid = true;
+            walls[i].isSolid = (tex != SWITCH_ON && tex != SWITCH_OFF);
             walls[i].message = NULL;
+            if (tex == SWITCH_OFF) {
+                if (switchesOff == -1)
+                    switchesOff = 0;
+                switchesOff++;
+            }
         }
         walls[i].tint = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     }
@@ -522,7 +545,8 @@ Entity* Level::createEntity(uint16_t entNum, int x, int y) {
         case BIGSYRINGE:
             return new Syringe(start, entNum & 1);
         case COLLEEN:
-            return new Colleen(start);
+            colleen = new Colleen(start);
+            return colleen;
         case BEACON:
             return new Beacon(start);
         case THROWER:

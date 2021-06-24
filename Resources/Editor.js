@@ -37,7 +37,8 @@ let gridColors = [
     "#3ca370",
     "#4da6ff",
     "#80366b",
-    "#964253"
+    "#964253",
+    "black"
 ];
 
 let camera = {

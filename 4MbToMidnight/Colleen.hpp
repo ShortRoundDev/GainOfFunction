@@ -23,6 +23,8 @@ public:
 	~Colleen();
 	void update();
 
+	GLuint healthbarTex;
+
 	ALuint loopSource;
 
 	//ai
@@ -38,9 +40,17 @@ public:
 	void pursuingUpdate();
 	void patrollingUpdate();
 
+	int healthbarWidth = 0;
+
 	int idleLastCheckedtransition = 0;
 
+	int volleyCooldown = 100;
+	int fireballCooldown = 10;
+	int fireballs = 3;
+
 	void move();
+	void hurt(int damage, glm::vec3 pos);
+	void die();
 
 	//pathfinding
 	bool seesPlayer;

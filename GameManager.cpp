@@ -75,9 +75,7 @@ void GameManager::update() {
         SoundManager::update();
         GameManager::instance->_update();
         accumulator -= TIMESPEED;
-    }
-
-    
+    }   
 }
 
 void GameManager::draw() {
@@ -202,11 +200,22 @@ void GameManager::loadSaveFile(std::string levelname) {
     
     player.health = playerHealth;
     
+    player.activeWeapon = 0;
+
     player.hasPistol = playerHasPistol == 1;
     player.ammo = pistolAmmo;
 
+    if (player.hasPistol) {
+        player.activeWeapon = 1;
+    }
+
     player.hasRifle = playerHasRifle == 1;
     player.rifleAmmo = rifleAmmo;
+
+    if (player.hasRifle) {
+        player.activeWeapon = 2;
+    }
+
     fclose(fp);
 }
 
@@ -255,6 +264,12 @@ void GameManager::updateGame() {
                 SoundManager::instance->playSound("Resources/Audio/pistol.ogg", glm::vec3(0.0f), 1.0f);
             }
         }
+        else if (showSecrets > 0) {
+            showSecrets--;
+            if (showSecrets <= 0) {
+                SoundManager::instance->playSound("Resources/Audio/pistol.ogg", glm::vec3(0.0f), 1.0f);
+            }
+        }
         return;
     }
     camera.update();
@@ -282,6 +297,7 @@ void GameManager::_draw() {
         print(message, SCREEN_X(140), SCREEN_Y(212), 0.06);
         print("Press Q to close", SCREEN_X(1024 - 512), SCREEN_Y(768 - 32), 0.07);
     }
+    print(std::to_string(player.actualZone).c_str(), SCREEN_X(32), SCREEN_Y(32), 0.07);
 }
 
 void GameManager::drawGame() {
@@ -303,6 +319,10 @@ void GameManager::drawGame() {
         if (showItems <= 0) {
             print((std::string("ITEMS  ") + std::to_string(player.collectedItems + 0)).c_str(), SCREEN_X(600), SCREEN_Y(768 / 2 + 64), 0.05f);
             print((std::string("OF  ") + std::to_string(currentLevel->totalItems)).c_str(), SCREEN_X(854), SCREEN_Y(768 / 2 + 64), 0.05f);
+        }
+        if (showSecrets <= 0) {
+            print((std::string("SECRETS  ") + std::to_string(player.foundSecrets + 0)).c_str(), SCREEN_X(600), SCREEN_Y(768 / 2 + 128), 0.05f);
+            print((std::string("OF  ") + std::to_string(currentLevel->totalSecrets)).c_str(), SCREEN_X(854), SCREEN_Y(768 / 2 + 128), 0.05f);
         }
         if (showDead <= 0 && showItems <= 0) {
             print("PRESS SPACE TO CONTINUE", SCREEN_X(128), SCREEN_Y(768 - 64), 0.08f);
@@ -853,7 +873,7 @@ void cursorPositionCallback(GLFWwindow* window, double xPos, double yPos) {
 }
 
 void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    if (GameManager::instance->levelChanging)
+    if (GameManager::instance->levelChanging || GameManager::instance->currentLevel == NULL)
         return;
     if(button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
         (&PLAYER)->shoot();

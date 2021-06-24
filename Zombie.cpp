@@ -37,6 +37,10 @@ Zombie::Zombie(glm::vec3 pos):
 void Zombie::update(){
     int x, y;
 
+#ifdef DISABLE_ZOMBIE_AI
+    return;
+#endif
+
     if (dead)
         return;
 
@@ -246,7 +250,7 @@ void Zombie::hurt(int damage, glm::vec3 hitPos) {
         moveVec += glm::normalize(glm::vec3(flatNormal.x, 0, flatNormal.z)) * 0.1f;
     }
     Entity::hurt(damage, hitPos);
-    PLAY_I(SoundManager::instance->ghoulPain[rand() % 3], position);
+    PLAY_I(SoundManager::instance->ghoulPain[rand() % 2], position);
 }
 
 void Zombie::die() {
@@ -257,8 +261,7 @@ void Zombie::die() {
 }
 
 void Zombie::whoosh() {
-    auto whooshSound = rand() % 3;
-    PLAY_I(SoundManager::instance->whooshSounds[whooshSound], position);
+    PLAY_I(SoundManager::instance->whooshSound, position);
 }
 
 void Zombie::whack() {

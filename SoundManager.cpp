@@ -52,6 +52,7 @@ SoundManager::SoundManager() : sounds(), sourceStack(), context(NULL) {
     loadFile("Resources/Audio/WeirdNoises.ogg", false);
     loadFile("Resources/Audio/fire01.ogg", false);
     loadFile("Resources/Audio/explosion.ogg", false);
+    loadFile("Resources/Audio/click.ogg", false);
 
     //sfx
     whackSounds[0] = loadFile("Resources/Audio/PUNCH_DESIGNED_HEAVY_63.ogg", false);
@@ -59,11 +60,8 @@ SoundManager::SoundManager() : sounds(), sourceStack(), context(NULL) {
 
     bulletHitSound[0] = loadFile("Resources/Audio/PUNCH_DESIGNED_MEDIUM_57.ogg", false);
     bulletHitSound[1] = loadFile("Resources/Audio/PUNCH_DESIGNED_MEDIUM_58.ogg", false);
-    bulletHitSound[2] = loadFile("Resources/Audio/PUNCH_DESIGNED_MEDIUM_59.ogg", false);
 
-    whooshSounds[0] = loadFile("Resources/Audio/Punch_Very_Fast_Whoosh_01.ogg", false);
-    whooshSounds[1] = loadFile("Resources/Audio/Punch_Very_Fast_Whoosh_02.ogg", false);
-    whooshSounds[2] = loadFile("Resources/Audio/Punch_Very_Fast_Whoosh_03.ogg", false);
+    whooshSound = loadFile("Resources/Audio/Punch_Very_Fast_Whoosh_01.ogg", false);
 
     fleshSound = loadFile("Resources/Audio/Flesh Rip 11.ogg", false);
 
@@ -72,7 +70,6 @@ SoundManager::SoundManager() : sounds(), sourceStack(), context(NULL) {
     
     ghoulPain[0] = loadFile("Resources/Audio/GhoulPain01.ogg", false);
     ghoulPain[1] = loadFile("Resources/Audio/GhoulPain02.ogg", false);
-    ghoulPain[2] = loadFile("Resources/Audio/GhoulPain03.ogg", false);
 
     ghoulMoan[0] = loadFile("Resources/Audio/GhoulMoan01.ogg", false);
     ghoulMoan[1] = loadFile("Resources/Audio/GhoulMoan02.ogg", false);
@@ -214,6 +211,7 @@ void SoundManager::playSound(ALuint buffer, const glm::vec3& pos, float gain) {
     alSourcei(source, AL_BUFFER, buffer);
     alSource3f(source, AL_POSITION, pos.x, pos.y, pos.z);
     alSourcePlay(source);
+    std::cout << "Playing sound" << std::endl;
 }
 
 ALuint SoundManager::playLoop(ALuint buffer, const glm::vec3& pos, float gain) {
@@ -222,5 +220,6 @@ ALuint SoundManager::playLoop(ALuint buffer, const glm::vec3& pos, float gain) {
     alSourcei(source, AL_BUFFER, buffer);
     alSource3f(source, AL_POSITION, pos.x, pos.y, pos.z);
     alSourcePlay(source);
+    std::cout << "Playing loop" << std::endl;
     return source;
 }

@@ -38,5 +38,5 @@
 
 #define DIST_2(a, b) (glm::length(glm::vec2((a).x, (a).z) - glm::vec2((b).x, (b).z)))
 
-#define PRINT_VEC3(v) (v.x) << ", " << (v.y) << ", " << (v.z)
+#define PRINT_VEC3(v) ((v).x) << ", " << ((v).y) << ", " << ((v).z)
 

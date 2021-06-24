@@ -48,11 +48,11 @@ public:
     GLuint squareVao;
 
     int statusCode;
-    
+
 private:
     uint16_t width;
     uint16_t height;
-    
+
     int initGlfw(std::string& title);
     int initGL();
     int initShaders();
