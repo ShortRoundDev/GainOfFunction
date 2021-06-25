@@ -37,7 +37,7 @@ Thrower::~Thrower() {
 }
 
 void Thrower::update() {
-    if (dead)
+    if (dead || GameManager::zombiesOff)
         return;
     if (currentAnimation == "die") {
         animations[currentAnimation].iterate(0.2f);

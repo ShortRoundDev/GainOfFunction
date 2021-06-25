@@ -44,12 +44,10 @@ void Wall::open(){
         (key == 2 && !PLAYER.hasBlueKey) ||
         (key == 3 && !PLAYER.hasYellowKey)
     ){
-        std::cout << "Need key!" << std::endl;
         return;
     }
     PLAY_S("Resources/Audio/doorOpen.ogg", glm::vec3((float)x + 0.5f, 0.5f, (float)y + 0.5f));
 
-    std::cout << "Opening " << key << std::endl;
 
     this->isOpening = true;
     openProgress = 0.0f;

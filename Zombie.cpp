@@ -40,6 +40,8 @@ void Zombie::update(){
 #ifdef DISABLE_ZOMBIE_AI
     return;
 #endif
+    if (GameManager::zombiesOff)
+        return;
 
     if (dead)
         return;

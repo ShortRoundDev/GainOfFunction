@@ -211,7 +211,6 @@ void SoundManager::playSound(ALuint buffer, const glm::vec3& pos, float gain) {
     alSourcei(source, AL_BUFFER, buffer);
     alSource3f(source, AL_POSITION, pos.x, pos.y, pos.z);
     alSourcePlay(source);
-    std::cout << "Playing sound" << std::endl;
 }
 
 ALuint SoundManager::playLoop(ALuint buffer, const glm::vec3& pos, float gain) {
@@ -220,6 +219,5 @@ ALuint SoundManager::playLoop(ALuint buffer, const glm::vec3& pos, float gain) {
     alSourcei(source, AL_BUFFER, buffer);
     alSource3f(source, AL_POSITION, pos.x, pos.y, pos.z);
     alSourcePlay(source);
-    std::cout << "Playing loop" << std::endl;
     return source;
 }

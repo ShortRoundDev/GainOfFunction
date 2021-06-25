@@ -176,8 +176,10 @@ void Level::draw() {
 
     if(GameManager::instance->bright){
         wallShader->setFloat("minBright", 0.9f);
+        wallShader->setFloat("maxBright", GameManager::maxBright);
     } else {
         wallShader->setFloat("minBright", 0.0f);
+        wallShader->setFloat("maxBright", GameManager::maxBright);
     }
 
     for(int i = MAX(0, (int)(PLAYER.pos.z - DRAW_HEIGHT)); i < MIN(height, (int)(PLAYER.pos.z + DRAW_HEIGHT)); i++) {
@@ -241,8 +243,10 @@ void Level::draw() {
     Entity::shader->setMat4("projection", GameManager::instance->projection);
     if(GameManager::instance->bright){
         Entity::shader->setFloat("minBright", 0.9f);
+        wallShader->setFloat("maxBright", GameManager::maxBright);
     } else {
         Entity::shader->setFloat("minBright", 0.0f);
+        wallShader->setFloat("maxBright", GameManager::maxBright);
     }
     for(auto e : entities){
         if(DIST_2(e->position, PLAYER.pos) < 10)
@@ -550,6 +554,7 @@ Entity* Level::createEntity(uint16_t entNum, int x, int y) {
         case BEACON:
             return new Beacon(start);
         case THROWER:
+            totalEnemies++;
             return new Thrower(start);
     }
     return new Entity(

@@ -31,7 +31,14 @@ public:
 
     static GameState state;
     static bool showingMessage;
+    static bool zombiesOff;
     static char* message;
+
+    static char* credits;
+
+    static float creditRoll;
+
+    static float maxBright;
     
     static bool keyMap[GLFW_KEY_LAST];
     
@@ -48,6 +55,8 @@ public:
     
     static void drawUi(GLuint texture, float x, float y, float w, float h);
     static void drawAnimatedUi(GLuint texture, float x, float y, float w, float h, float frame, float maxFrame);
+
+    static void loadCredits();
 
     static void save();
 

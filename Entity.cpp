@@ -69,6 +69,14 @@ void Entity::draw() {
     if(shaderOverride == nullptr){
         _shader = shader;
         _shader->use();
+        if (GameManager::instance->bright) {
+            _shader->setFloat("minBright", 0.9f);
+            _shader->setFloat("maxBright", GameManager::maxBright);
+        }
+        else {
+            _shader->setFloat("minBright", 0.0f);
+            _shader->setFloat("maxBright", GameManager::maxBright);
+        }
     } else {
         _shader = shaderOverride;
         _shader->use();
@@ -78,8 +86,10 @@ void Entity::draw() {
         _shader->setMat4("projection",  GameManager::instance->projection);
         if(GameManager::instance->bright){
             _shader->setFloat("minBright", 0.9f);
+            _shader->setFloat("maxBright", GameManager::maxBright);
         } else {
             _shader->setFloat("minBright", 0.0f);
+            _shader->setFloat("maxBright", GameManager::maxBright);
         }
     }
 
@@ -241,6 +251,7 @@ void Entity::hurt(int damage, glm::vec3 hitPos){
     hurtTimer = 20;
     this->health -= damage;
     if(this->health <= 0){
+        this->health = 0;
         die();
     }
 }

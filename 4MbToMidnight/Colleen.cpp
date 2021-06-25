@@ -59,6 +59,13 @@ void Colleen::update() {
 				loopSource = -1;
 			}
 		}
+		else if(GameManager::maxBright > 0.0f){
+			GameManager::maxBright -= 0.01f;
+			if (GameManager::maxBright < 0.0f) {
+				GameManager::maxBright == 0.0f;
+				// start credit roll
+			}
+		}
 		return;
 	}
 
@@ -110,7 +117,6 @@ void Colleen::idleCheckTransitions() {
 	}
 
 	if (canSeePlayer()) {
-		std::cout << "Idle -> Attacking" << std::endl;
 		state = ColleenState::ATTACKING;
 		return;
 	}
@@ -126,19 +132,16 @@ void Colleen::idleCheckTransitions() {
 			beaconHistory.pop_front();
 		}
 		state = ColleenState::PATROLLING;
-		std::cout << "Idle -> Patrolling" << std::endl;
 	}
 }
 
 void Colleen::attackingCheckTransitions() {
 	if (PLAYER.health <= 0) {
 		state = ColleenState::PATROLLING;
-		std::cout << "Attacking -> Patrolling" << std::endl;
 		return;
 	}
 	else if (!canSeePlayer()) {
 		(&PLAYER)->zonesCrossed = 0;
-		std::cout << "Attacking -> Pursuing" << std::endl;
 		state = ColleenState::PURSUING;
 	}
 }
@@ -146,7 +149,6 @@ void Colleen::attackingCheckTransitions() {
 void Colleen::pursuingCheckTransitions() {
 	if (canSeePlayer()) {
 		pathRecalculationTimer = 0;
-		std::cout << "Pursuing -> Attacking" << std::endl;
 		state = ColleenState::ATTACKING;
 	}
 	else if (PLAYER.zonesCrossed == 3 || PLAYER.actualZone == 8) {
@@ -161,34 +163,28 @@ void Colleen::pursuingCheckTransitions() {
 		if (!path.empty())
 			path.clear();
 		if (b == NULL || !findPathToEntity(b, &path, &goals)) {
-			std::cout << "Pursuing -> Idle (!)" << std::endl;
 			state = ColleenState::IDLE;
 		}
 		else {
-			std::cout << "New Beacon: " << PRINT_VEC3(b->position) << std::endl;
 			beaconHistory.push_back(b->id);
 			beaconHistory.pop_front();
 		}
 
-		std::cout << "Pursuing -> Patrolling" << std::endl;
 	}
 }
 
 void Colleen::patrollingCheckTransitions() {
 	if (canSeePlayer()) {
 		state = ColleenState::ATTACKING;
-		std::cout << "Patrolling -> Attacking" << std::endl;
 	}
 	else if (goals.empty()) {
 		Beacon* b = findFarthestBeacon();
 		if (!path.empty())
 			path.clear();
 		if (b == NULL || !findPathToEntity(b, &path, &goals)) {
-			std::cout << "Patrolling -> Idle" << std::endl;
 			state = ColleenState::IDLE;
 		}
 		else {
-			std::cout << "New Beacon: " << PRINT_VEC3(b->position) << std::endl;
 			beaconHistory.push_back(b->id);
 			beaconHistory.pop_front();
 		}
@@ -234,7 +230,6 @@ void Colleen::pursuingUpdate() {
 		}
 		if (!Entity::findPathToSpot((int)PLAYER.pos.x, (int)PLAYER.pos.z, &path, &goals)) { // shouldn't happen
 			pathRecalculationTimer = 0;
-			std::cout << "Pursuing -> Patrolling (!)" << std::endl;
 			state = ColleenState::PATROLLING;
 			return;
 		}
@@ -340,4 +335,5 @@ void Colleen::hurt(int damage, glm::vec3 pos) {
 
 void Colleen::die() {
 	currentAnimation = "dead";
+	GameManager::zombiesOff = true;
 }

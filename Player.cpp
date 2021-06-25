@@ -51,12 +51,10 @@ void Player::update(GLFWwindow* window){
 
     if (colleenKillingCooldown > 0) {
         pos.y = 0.5f + ((((float)(100 - colleenKillingCooldown)) / 100.0f) * 0.3f);
-        std::cout << pos.y << std::endl;
         colleenKillingCooldown--;
     }
     else if (colleenKillingCooldown == 0) {
         health = 0;
-        std::cout << "Dead" << std::endl;
         colleenKillingCooldown = -2;
         auto whackSound = rand() % 2;
         PLAY_I(SoundManager::instance->whackSounds[whackSound], pos);
@@ -67,7 +65,6 @@ void Player::update(GLFWwindow* window){
     if (currentWall != NULL) {
         actualZone = currentWall->zone;
         if (currentWall->zone != currentZone && std::find(zoneHistory.begin(), zoneHistory.end(), currentWall->zone) == zoneHistory.end()) {
-            std::cout << "Zone Transition: " << currentZone << " -> " << currentWall->zone << " #" << zonesCrossed << std::endl;
             currentZone = currentWall->zone;
             if (currentZone != -1) { // being chased
                 zonesCrossed++;
@@ -134,7 +131,7 @@ void Player::move(GLFWwindow* window) {
     bool moving = false;
     Camera* camera = &(GameManager::instance->camera);
     moveDir = glm::vec3(0, 0, 0);
-    if (health > 0 && colleenKillingCooldown == -1) {
+    if (health > 0 && colleenKillingCooldown == -1 && GameManager::instance->currentLevel->colleen == NULL || !GameManager::instance->currentLevel->colleen->dead) {
         if (GameManager::keyMap[GLFW_KEY_W]) {
             moving = true;
             moveDir += glm::normalize(glm::vec3(camera->cameraFront.x, 0.0f, camera->cameraFront.z));
@@ -302,8 +299,10 @@ void Player::keyHandler(GLFWwindow* window, int key, int scancode, int action, i
         }
         return;
     }
+    if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+        GameManager::instance->currentLevel->switchesOff = 0;
+    }
     if(key == GLFW_KEY_E && action == GLFW_PRESS) {
-
         Wall* occupied = TRY_WALL(((int)pos.x), ((int)pos.z));
         if (occupied != NULL && !GameManager::showingMessage && WALL_IS_KIND(occupied, TV_SCREEN) && occupied->message != NULL) {
             GameManager::displayMessage(occupied->message);
@@ -370,6 +369,10 @@ void Player::keyHandler(GLFWwindow* window, int key, int scancode, int action, i
 }
 
 void Player::draw() {
+
+    if (GameManager::instance->currentLevel->colleen != NULL && GameManager::instance->currentLevel->colleen->dead)
+        return;
+
     if (health >= 5) {
         GameManager::drawAnimatedUi(greenHealth, SCREEN_X(74), SCREEN_Y(768 - 10), SCREEN_W(256), SCREEN_H(128), floor(healthFrame), 66.0f);
     }

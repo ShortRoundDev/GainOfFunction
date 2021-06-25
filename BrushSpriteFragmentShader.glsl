@@ -7,13 +7,14 @@ in vec3 dist;
 uniform sampler2D tex;
 uniform vec4 tint;
 uniform float minBright;
+uniform float maxBright;
 
 void main(){
     
     vec4 t = texture(tex, TexCoord);
     if(t.a == 0.0)
         discard;
-    float z = min(1,
+    float z = min(maxBright,
         max(
             minBright,
             round(10.0/(length(dist.xz)) - 1)/10.0

@@ -33,8 +33,14 @@ std::unique_ptr<GameManager> GameManager::instance = nullptr;
 int64_t GameManager::accumulator = 0;
 std::chrono::high_resolution_clock::time_point GameManager::lastFrame = std::chrono::high_resolution_clock::now();
 
+float GameManager::maxBright = 1.0f;
+bool GameManager::zombiesOff = false;
+
 bool GameManager::showingMessage = false;
 char* GameManager::message = NULL;
+char* GameManager::credits = NULL;
+
+float GameManager::creditRoll = 798.0f;
 
 bool GameManager::keyMap[GLFW_KEY_LAST];
 GameState GameManager::state = MAIN_MENU;
@@ -49,6 +55,8 @@ int GameManager::init(GLFWwindow* window, const uint16_t width, const uint16_t h
 
     //instance->load("Resources/e1m1.bin", false);
     instance->loadAvailableSaves();
+    loadCredits();
+
 
     srand(time(NULL));
     return 0;
@@ -138,6 +146,8 @@ void GameManager::load(std::string levelName, bool loadSave, bool saving) {
     else {
         return;
     }
+    zombiesOff = false;
+    maxBright = 1.0f;
     for (int i = 1; i < currentLevel->numberOfTextures + 1; i++) {
         GraphicsManager::loadTex(i, GL_BGRA);
     }
@@ -170,6 +180,10 @@ void GameManager::load(std::string levelName, bool loadSave, bool saving) {
     else {
         //player.health = 6;
     }
+
+    player.killedEnemies = 0;
+    player.collectedItems = 0;
+    player.foundSecrets = 0;
 
     state = PLAYING;
 }
@@ -297,10 +311,22 @@ void GameManager::_draw() {
         print(message, SCREEN_X(140), SCREEN_Y(212), 0.06);
         print("Press Q to close", SCREEN_X(1024 - 512), SCREEN_Y(768 - 32), 0.07);
     }
-    print(std::to_string(player.actualZone).c_str(), SCREEN_X(32), SCREEN_Y(32), 0.07);
 }
 
 void GameManager::drawGame() {
+
+    if (currentLevel->colleen != NULL && currentLevel->colleen->dead && maxBright <= 0.0f) {
+        creditRoll -= 0.7f;
+        print(credits, SCREEN_X(64), SCREEN_Y((int)creditRoll), 0.08f);
+        if (creditRoll <= -2000.0f) {
+            delete GameManager::instance->currentLevel;
+            GameManager::instance->currentLevel = NULL;
+            GameManager::instance->state = MAIN_MENU;
+            creditRoll = 798.0f;
+        }
+        return;
+    }
+
     currentLevel->draw();
     auto playerStr = std::string("P ") + std::to_string((int)player.pos.x) + " " + std::to_string((int)player.pos.z);
     glClear(GL_DEPTH_BUFFER_BIT);
@@ -328,6 +354,7 @@ void GameManager::drawGame() {
             print("PRESS SPACE TO CONTINUE", SCREEN_X(128), SCREEN_Y(768 - 64), 0.08f);
         }
     }
+
 
     //print(playerStr.c_str(), SCREEN_X(64), SCREEN_Y(64), 0.05f);
 }
@@ -983,3 +1010,19 @@ void GameManager::loadAvailableSavesLinux() {
 
 }
 #endif
+
+void GameManager::loadCredits() {
+    FILE* fp = fopen("Resources/Credits.txt", "r");
+    if (fp == NULL) {
+        std::cerr << "Couldn't find credits!" << std::endl;
+        return;
+    }
+
+    fseek(fp, 0, SEEK_END);
+    size_t creditSize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+
+    credits = (char*)calloc(creditSize, sizeof(char));
+    fread(credits, sizeof(char), creditSize, fp);
+    fclose(fp);
+}
